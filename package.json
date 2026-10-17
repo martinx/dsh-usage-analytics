@@ -1,0 +1,15 @@
+{
+  "name": "dsh-usage-analytics",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local usage, token and cost analytics for DeepSeek Harness, built from this desktop's own session logs.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "dsh": ">=0.2.0-rc.2"
+  }
+}

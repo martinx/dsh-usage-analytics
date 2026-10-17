@@ -1,0 +1,26 @@
+# dsh-usage-analytics
+
+Local usage, token and cost analytics for DeepSeek Harness — built from this desktop's own
+session logs. No billing API, no external service, nothing uploaded.
+
+- Full request-level records: model/provider, turn/step, token buckets, peak/off-peak price,
+  CNY cost, latency
+- SQLite store with idempotent incremental ingest from `$DSH_HOME/sessions`
+- Official 2026 DeepSeek pricing, editable; yearly holiday table (bundled + syncable)
+- Serves a read-only JSON API for the dock pill and the dashboard
+
+See [docs/design.md](docs/design.md) for the data model, cost rules and roadmap.
+
+## Verify locally
+
+```bash
+node scripts/ingest.mjs            # default DB under $DSH_HOME/storages/usage-analytics
+node scripts/ingest.mjs /tmp/u.db  # throwaway database
+```
+
+## Status
+
+- P0 (this commit): ingest + SQLite + cost engine + JSON API
+- P1: dock balance pill + overview popover (balance moves here from `dsh-workspace-status`)
+- P2: dashboard SPA (Overview / Models / Sessions / Requests / Cost & Balance / Settings)
+- P3: reconciliation, budget alerts, exports, holiday sync
