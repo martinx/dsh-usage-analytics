@@ -20,7 +20,7 @@ node scripts/ingest.mjs /tmp/u.db  # throwaway database
 
 ## Dashboard
 
-The dashboard follows the app theme (`?theme=light|dark` passed by the pill) and opens in full screen, which also hides the macOS traffic lights while it is open.
+The dashboard follows the app theme (`?theme=light|dark` passed by the pill) and fills the current DSH window. macOS traffic lights stay visible, so the overlay draws a native-style title bar that holds them; X (or Esc) closes it.
 
 ## Status
 
