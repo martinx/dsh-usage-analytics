@@ -20,7 +20,7 @@ node scripts/ingest.mjs /tmp/u.db  # throwaway database
 
 ## Status
 
-- P0 (this commit): ingest + SQLite + cost engine + JSON API
-- P1: dock balance pill + overview popover (balance moves here from `dsh-workspace-status`)
-- P2: dashboard SPA (Overview / Models / Sessions / Requests / Cost & Balance / Settings)
+- P0: ingest + SQLite + cost engine + JSON API
+- P1: dock balance pill + overview popover (balance moved here from `dsh-workspace-status`)
+- P2: dashboard SPA at `/dsh-plugin/usage/` (Overview / Models / Sessions / Requests / Cost & Balance / Settings), full-screen in-app overlay, Chinese UI
 - P3: reconciliation, budget alerts, exports, holiday sync

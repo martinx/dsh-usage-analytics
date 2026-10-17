@@ -1,0 +1,2384 @@
+<!doctype html>
+<html lang="zh-CN" translate="no" class="notranslate">
+<head>
+<meta charset="utf-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>用量分析</title>
+<link rel="icon" href="data:,">
+<style>
+/* ---------------------------------------------------------------- tokens */
+:root{
+  --bg:#0a0a0a;
+  --bg-soft:#111318;
+  --card:#14161c;
+  --card-2:#181b22;
+  --border:#23262f;
+  --border-strong:#313644;
+  --text:#e8eaed;
+  --muted:#8b90a0;
+  --faint:#6b7080;
+  --accent:#5686fe;
+  --accent-2:#7aa2ff;
+  --success:#4ade80;
+  --warn:#fbbf24;
+  --danger:#f87171;
+  --radius:12px;
+  --radius-sm:8px;
+  --gap:8px;
+  --sidebar-w:220px;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  color-scheme:dark;
+}
+
+/* ---------------------------------------------------------------- reset */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  font-size:14px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+h1,h2,h3,p,dl,dd,dt,ul,ol,li,figure{margin:0}
+ul,ol{padding:0;list-style:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0}
+a{color:var(--accent);text-decoration:none}
+code{font-family:var(--mono);font-size:.92em}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+svg{display:block}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#2a2e39;border-radius:8px;border:2px solid var(--card)}
+::-webkit-scrollbar-track{background:transparent}
+
+/* --------------------------------------------------------------- layout */
+.app{display:flex;min-height:100vh}
+.sidebar{
+  position:fixed;
+  top:0;bottom:0;left:0;
+  width:var(--sidebar-w);
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  padding:16px 12px;
+  background:var(--bg-soft);
+  border-right:1px solid var(--border);
+  overflow-y:auto;
+  z-index:20;
+}
+.main{flex:1;min-width:0;margin-left:var(--sidebar-w)}
+.content{max-width:1280px;margin:0 auto;padding:24px}
+.page{display:flex;flex-direction:column;gap:var(--gap)}
+.sidebar-foot{
+  margin-top:auto;
+  padding:10px 8px 2px;
+  color:var(--faint);
+  font-size:11.5px;
+  line-height:1.5;
+}
+
+/* --------------------------------------------------------------- brand */
+.brand{display:flex;align-items:center;gap:10px;padding:4px 6px 12px}
+.brand-mark{
+  width:30px;height:30px;flex:none;
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:9px;
+  background:rgba(86,134,254,.16);
+  color:var(--accent);
+}
+.brand-text{font-size:15px;font-weight:650;letter-spacing:.02em}
+
+/* ---------------------------------------------------------------- nav */
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;
+  border-radius:8px;
+  color:var(--muted);
+  font-size:13.5px;
+  transition:background .12s ease,color .12s ease;
+}
+.nav a:hover{background:#1a1d25;color:var(--text)}
+.nav a[aria-current="page"]{background:rgba(86,134,254,.14);color:#c9d8ff;font-weight:600}
+.nav .ico{flex:none;opacity:.9}
+
+/* ------------------------------------------------------------ page head */
+.page-head{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  gap:16px;flex-wrap:wrap;
+  margin-bottom:18px;
+}
+.head-titles h1{font-size:21px;font-weight:650;letter-spacing:-.01em}
+.head-titles p{color:var(--muted);font-size:12.5px;margin-top:4px}
+.head-tools{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.range-label{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;text-align:right}
+
+/* segmented range control */
+.seg{
+  display:inline-flex;
+  gap:2px;
+  padding:2px;
+  background:var(--bg-soft);
+  border:1px solid var(--border);
+  border-radius:8px;
+}
+.seg button{
+  padding:4px 11px;
+  border-radius:6px;
+  color:var(--muted);
+  font-size:12.5px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:background .12s ease,color .12s ease;
+}
+.seg button:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.seg button[aria-pressed="true"]{
+  background:rgba(86,134,254,.16);
+  color:#d7e3ff;
+  box-shadow:inset 0 0 0 1px rgba(86,134,254,.35);
+}
+
+/* --------------------------------------------------------------- cards */
+.card{
+  min-width:0;
+  padding:16px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+}
+.card h2,.card-head h2{font-size:14px;font-weight:600}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.card-sub{color:var(--muted);font-size:12px;margin-top:2px}
+.head-actions{display:flex;align-items:center;gap:8px;flex:none}
+.note{color:var(--muted);font-size:12px;line-height:1.65;margin-top:8px}
+.hint{color:var(--faint);font-size:11.5px}
+
+/* --------------------------------------------------------------- grids */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--gap)}
+.grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gap)}
+@media (max-width:1100px){
+  .kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid-2{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ----------------------------------------------------------------- kpi */
+.kpi{display:flex;flex-direction:column;gap:2px}
+.kpi-label{color:var(--muted);font-size:12px}
+.kpi-value{
+  margin:2px 0;
+  font-size:25px;
+  font-weight:650;
+  letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.kpi-sub{color:var(--faint);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi-accent .kpi-value{color:var(--accent)}
+.kpi-success .kpi-value{color:var(--success)}
+.kpi-warn .kpi-value{color:var(--warn)}
+.kpi-danger .kpi-value{color:var(--danger)}
+
+/* -------------------------------------------------------------- buttons */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:6px 12px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:#1a1d25;
+  color:var(--text);
+  font-size:12.5px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:background .12s ease,border-color .12s ease;
+}
+.btn:hover{background:#222634;border-color:var(--border-strong)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn-sm{padding:3px 9px;font-size:12px;border-radius:6px}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:#6b95ff;border-color:#6b95ff}
+.btn-ghost{background:transparent}
+.btn-link{background:transparent;border:0;padding:0;color:var(--accent);cursor:pointer;font-size:12.5px}
+.btn-link:hover{text-decoration:underline}
+
+/* --------------------------------------------------------------- forms */
+select,input[type="number"],input[type="text"]{
+  padding:5px 9px;
+  border:1px solid var(--border);
+  border-radius:7px;
+  background:#0f1116;
+  color:var(--text);
+  font:inherit;
+  font-size:12.5px;
+}
+select{cursor:pointer}
+select:focus,input:focus{
+  outline:none;
+  border-color:var(--accent);
+  box-shadow:0 0 0 2px rgba(86,134,254,.18);
+}
+.field{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12.5px}
+.field select{min-width:140px}
+.price-input{
+  width:86px;
+  padding:4px 7px;
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+.actions-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}
+.filter-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px;min-height:28px}
+.filter-spacer{flex:1}
+
+/* -------------------------------------------------------------- tables */
+.table-wrap{
+  max-height:min(68vh,760px);
+  overflow:auto;
+  border:1px solid var(--border);
+  border-radius:10px;
+}
+.data{width:100%;border-collapse:separate;border-spacing:0;font-size:12.8px}
+.data th,.data td{
+  padding:8px 12px;
+  text-align:left;
+  border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+.data thead th{
+  position:sticky;top:0;z-index:2;
+  background:var(--card-2);
+  color:var(--muted);
+  font-weight:500;
+  font-size:11.5px;
+  letter-spacing:.02em;
+}
+.data tbody tr:nth-child(even){background:rgba(255,255,255,.017)}
+.data tbody tr:hover{background:rgba(86,134,254,.075)}
+.data tbody tr:last-child td{border-bottom:0}
+.data .num,.data th.num{text-align:right;font-variant-numeric:tabular-nums}
+.data tr.row-link{cursor:pointer}
+.data tr.row-link:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.sort-btn{
+  display:inline-flex;align-items:center;gap:4px;
+  border:0;background:none;padding:0;
+  color:inherit;font:inherit;
+  cursor:pointer;
+}
+.sort-btn:hover{color:var(--text)}
+.sort-arrow{font-size:9px;color:var(--faint)}
+.data th[aria-sort="ascending"] .sort-arrow,
+.data th[aria-sort="descending"] .sort-arrow{color:var(--accent)}
+.data td.empty-cell{padding:0}
+
+.truncate{display:inline-block;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+.mono{font-family:var(--mono)}
+.model-tag{
+  display:inline-block;
+  padding:1px 6px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:rgba(255,255,255,.04);
+  color:#c9d3e6;
+  font-family:var(--mono);
+  font-size:12px;
+}
+
+/* cost bars inside tables and rank lists */
+.bar-cell{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:130px}
+.bar-track{flex:1;min-width:60px;height:6px;border-radius:999px;background:#1e222c;overflow:hidden}
+.bar-fill{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#5686fe,#7aa2ff)}
+.bar-value{flex:none;font-variant-numeric:tabular-nums}
+.rank-list{display:flex;flex-direction:column;gap:14px}
+.rank-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:4px 10px}
+.rank-no{width:18px;color:var(--faint);font-size:11px;text-align:center;font-variant-numeric:tabular-nums}
+.rank-name{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank-meta{color:var(--faint);font-size:11px;margin-top:1px}
+.rank-cost{font-size:12.5px;font-variant-numeric:tabular-nums}
+.rank-bar{grid-column:1/-1;height:6px;margin-top:2px;border-radius:999px;background:#1e222c;overflow:hidden}
+.rank-bar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#5686fe,#7aa2ff)}
+
+/* --------------------------------------------------------------- charts */
+.chart{width:100%;margin-top:4px}
+.chart-svg{display:block;width:100%;height:auto}
+.axis-label{fill:var(--muted);font-size:10.5px;font-variant-numeric:tabular-nums}
+.donut-svg{width:176px;height:176px;flex:none}
+.donut-value{fill:var(--text);font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.donut-label{fill:var(--muted);font-size:10px}
+.donut-row{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.donut-legend{flex:1;min-width:180px;display:flex;flex-direction:column;gap:8px}
+.donut-legend li{
+  display:grid;
+  grid-template-columns:10px minmax(0,1fr) auto auto;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%}
+.legend-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.legend-value{color:var(--muted);font-variant-numeric:tabular-nums}
+.legend-pct{min-width:44px;text-align:right;color:var(--faint);font-variant-numeric:tabular-nums}
+
+/* ---------------------------------------------------------------- states */
+.state{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:44px 16px;
+  color:var(--muted);
+  font-size:12.5px;
+}
+.state-sm{padding:10px 0;justify-content:flex-start}
+.spinner{
+  width:16px;height:16px;flex:none;
+  border:2px solid var(--border);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin .75s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){
+  .spinner{animation:none;border-top-color:var(--border);border-right-color:var(--accent)}
+  .status-dot.busy{animation:none}
+}
+.empty{color:var(--muted);text-align:center;padding:28px 12px;font-size:12.5px;line-height:1.7}
+.empty-banner{
+  color:var(--muted);
+  font-size:13px;
+  border-color:rgba(251,191,36,.25);
+  background:rgba(251,191,36,.05);
+}
+.error-box{
+  display:flex;flex-direction:column;align-items:flex-start;gap:8px;
+  padding:18px;
+  border:1px solid rgba(248,113,113,.32);
+  border-radius:10px;
+  background:rgba(248,113,113,.06);
+}
+.error-title{color:var(--danger);font-size:13px;font-weight:600}
+.error-box p{color:var(--muted);font-size:12.5px;word-break:break-word}
+.error-inline{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:8px 0;
+  color:var(--danger);
+  font-size:12px;
+}
+
+/* --------------------------------------------------------------- badges */
+.badge{
+  display:inline-flex;align-items:center;
+  padding:1px 8px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.6;
+}
+.badge.peak{color:var(--warn);border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.08)}
+.badge.off{color:var(--muted);background:rgba(255,255,255,.03)}
+.badge.ok{color:var(--success);border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.08)}
+.badge.bad{color:var(--danger);border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.08)}
+
+/* ---------------------------------------------------------------- chips */
+.chip{
+  display:inline-flex;align-items:center;gap:6px;
+  max-width:340px;
+  padding:2px 4px 2px 10px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:#1a1d25;
+  color:var(--muted);
+  font-size:12px;
+}
+.chip code{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip button{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;flex:none;
+  border-radius:50%;
+  color:var(--muted);
+  cursor:pointer;
+}
+.chip button:hover{background:rgba(255,255,255,.08);color:var(--text)}
+
+/* --------------------------------------------------------------- balance */
+.balance-main{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:2px 0 8px}
+.balance-amount{font-size:30px;font-weight:650;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.balance-caption{color:var(--muted);font-size:12px}
+.wallet-list li{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:5px 0;
+  border-bottom:1px dashed rgba(35,38,47,.9);
+  color:var(--muted);
+  font-size:12.5px;
+}
+.wallet-list li:last-child{border-bottom:0}
+.bonus-block{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-top:10px;
+  padding:8px 10px;
+  border:1px solid rgba(74,222,128,.18);
+  border-radius:8px;
+  background:rgba(74,222,128,.06);
+  font-size:12.5px;
+}
+.bonus-label{color:var(--success)}
+.balance-foot{color:var(--faint);font-size:11px;margin-top:8px}
+
+/* ------------------------------------------------------- stats / status */
+.stat-list{display:flex;flex-direction:column;gap:8px;font-size:12.5px}
+.stat-list > div{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.stat-list dt{flex:none;color:var(--muted)}
+.stat-list dd{text-align:right;word-break:break-all;font-variant-numeric:tabular-nums}
+.path{font-family:var(--mono);font-size:11.5px;color:#b9c0d0;word-break:break-all;text-align:right}
+.stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px;font-size:12.5px}
+.stat-grid dt{color:var(--muted);font-size:11.5px}
+.stat-grid dd{margin-top:2px;font-size:14px;font-variant-numeric:tabular-nums}
+.status-line{display:flex;align-items:center;gap:8px;margin-bottom:10px;color:var(--muted);font-size:12.5px}
+.status-dot{width:8px;height:8px;flex:none;border-radius:50%;background:var(--faint)}
+.status-dot.busy{
+  background:var(--accent);
+  box-shadow:0 0 0 3px rgba(86,134,254,.18);
+  animation:pulse 1.4s ease-in-out infinite;
+}
+.status-dot.idle{background:var(--success)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+/* ----------------------------------------------------------------- msg */
+.msg{font-size:12px;color:var(--muted);word-break:break-word}
+.msg.ok{color:var(--success)}
+.msg.err{color:var(--danger)}
+
+/* ----------------------------------------------------------------- pager */
+.pager{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  margin-top:10px;
+  color:var(--muted);
+  font-size:12px;
+}
+.pager-actions{display:flex;align-items:center;gap:8px}
+.page-count{font-variant-numeric:tabular-nums}
+
+/* -------------------------------------------------------------- holidays */
+.holiday-groups{display:flex;flex-direction:column;gap:10px}
+.holiday-group{
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:#12141a;
+}
+.holiday-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;font-size:12.5px}
+.holiday-name{font-weight:600}
+.holiday-count{color:var(--faint);font-size:11px}
+.holiday-dates{display:flex;flex-wrap:wrap;gap:6px}
+.date-chip{
+  padding:1px 7px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:rgba(255,255,255,.03);
+  color:var(--muted);
+  font-family:var(--mono);
+  font-size:11px;
+}
+
+/* ---------------------------------------------------------------- misc */
+.sr-only{
+  position:absolute;width:1px;height:1px;
+  padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+.muted{color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+
+/* ------------------------------------------------------------ responsive */
+@media (max-width:900px){
+  .app{display:block}
+  .sidebar{
+    position:sticky;top:0;bottom:auto;left:auto;
+    width:100%;height:auto;
+    flex-direction:row;align-items:center;gap:14px;
+    padding:8px 12px;
+    border-right:0;
+    border-bottom:1px solid var(--border);
+    overflow:visible;
+  }
+  .brand{padding:0;flex:none}
+  .brand-mark{width:26px;height:26px;border-radius:8px}
+  .brand-text{font-size:14px}
+  .sidebar-foot{display:none}
+  .nav{flex:1;flex-direction:row;gap:2px;overflow-x:auto}
+  .nav a{padding:6px 9px;white-space:nowrap}
+  .main{margin-left:0}
+  .content{padding:16px 14px 28px}
+}
+@media (max-width:720px){
+  .kpi-grid{grid-template-columns:minmax(0,1fr)}
+  .grid-2{grid-template-columns:minmax(0,1fr)}
+  .page-head{align-items:flex-start}
+  .head-tools{align-items:flex-start}
+  .range-label{text-align:left}
+  .donut-row{gap:14px}
+  .data th,.data td{padding:7px 10px}
+  .truncate{max-width:200px}
+  .seg button{padding:4px 9px}
+  .page-head{margin-bottom:14px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" aria-label="侧边栏">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M4 18v-8M9.3 18V6M14.7 18v-5M20 18V9"/>
+        </svg>
+      </span>
+      <span class="brand-text">用量分析</span>
+    </div>
+    <nav class="nav" id="nav" aria-label="主导航">
+      <a href="#/overview" data-route="overview">
+        <svg class="ico" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+          <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+        </svg>
+        <span>概览</span>
+      </a>
+      <a href="#/models" data-route="models">
+        <svg class="ico" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3l7 4v10l-7 4-7-4V7z"/><path d="M12 12l7-4M12 12L5 8M12 12v9"/>
+        </svg>
+        <span>模型</span>
+      </a>
+      <a href="#/sessions" data-route="sessions">
+        <svg class="ico" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H10l2 2h5.5A2.5 2.5 0 0 1 20 9.5v7A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z"/>
+        </svg>
+        <span>会话与工作区</span>
+      </a>
+      <a href="#/requests" data-route="requests">
+        <svg class="ico" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/>
+        </svg>
+        <span>请求记录</span>
+      </a>
+      <a href="#/cost" data-route="cost">
+        <svg class="ico" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18M16 14.5h2"/>
+        </svg>
+        <span>成本与余额</span>
+      </a>
+      <a href="#/settings" data-route="settings">
+        <svg class="ico" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>
+        </svg>
+        <span>设置</span>
+      </a>
+    </nav>
+    <div class="sidebar-foot">本地统计 · 数据不出本机</div>
+  </aside>
+  <main class="main">
+    <div class="content">
+      <header class="page-head" id="page-head"></header>
+      <div class="page" id="page"></div>
+    </div>
+  </main>
+</div>
+<noscript><div style="padding:24px;color:#8b90a0">需要启用 JavaScript 才能查看用量分析。</div></noscript>
+<script type="module">
+/* =========================================================================
+ * 用量分析 — vanilla ES2022, no frameworks, no build step, no external assets.
+ * Served by the host plugin at /dsh-plugin/usage/, so every API call uses a
+ * relative path that starts with `api/`.
+ * ====================================================================== */
+
+const DEFAULT_HOLIDAY_URL = 'https://raw.githubusercontent.com/martinx/dsh-usage-analytics/main/data/holidays/2026.json';
+const PAGE_SIZE = 50;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const SH_OFFSET_MS = 8 * 60 * 60 * 1000; /* Asia/Shanghai is UTC+8, no DST */
+
+const ROUTES = ['overview', 'models', 'sessions', 'requests', 'cost', 'settings'];
+const RANGE_PRESETS = [
+  { key: 'today', label: '今日' },
+  { key: '7d', label: '7天' },
+  { key: '30d', label: '30天' },
+  { key: 'all', label: '全部' },
+];
+const ROUTE_META = {
+  overview: {
+    title: '概览',
+    subtitle: '本机使用总览：成本、请求数、token 与缓存命中率',
+  },
+  models: {
+    title: '模型',
+    subtitle: '按模型拆分的请求、token 与估算成本',
+  },
+  sessions: {
+    title: '会话与工作区',
+    subtitle: '工作区成本排行与会话明细',
+  },
+  requests: {
+    title: '请求记录',
+    subtitle: '逐条请求明细，可按模型与会话筛选',
+  },
+  cost: {
+    title: '成本与余额',
+    subtitle: '每日成本、账户余额与价格快照',
+  },
+  settings: {
+    title: '设置',
+    subtitle: '价格表、数据维护与节假日同步',
+  },
+};
+const MODEL_COLORS = ['#5686fe', '#4ade80', '#fbbf24', '#f87171', '#a78bfa', '#8b90a0'];
+const TOKEN_COLORS = { input: '#5686fe', cache: '#4ade80', output: '#fbbf24' };
+
+/* In-memory state. Range and optional filters are mirrored to the hash query. */
+const state = {
+  route: 'overview',
+  range: '7d',
+  model: '',
+  session: '',
+  offset: 0,
+  params: new URLSearchParams(),
+};
+
+let renderSeq = 0;
+let chartSeq = 0;
+
+/* ================================================================ helpers */
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function nextChartId(prefix) {
+  chartSeq += 1;
+  return `${prefix}${chartSeq}`;
+}
+
+function sumBy(list, pick) {
+  let total = 0;
+  for (const item of list ?? []) total += Number(pick(item)) || 0;
+  return total;
+}
+
+/* ============================================================= formatters */
+
+function trimOne(value) {
+  return (Math.round(value * 10) / 10).toFixed(1).replace(/\.0$/, '');
+}
+
+/** 1_234_567 -> "1.2M", 856_123 -> "856K", 999 -> "999". */
+function fmtTokens(value) {
+  if (value === null || value === undefined || value === '') return '—';
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  const abs = Math.abs(n);
+  if (abs === 0) return '0';
+  if (abs >= 1e9) return `${trimOne(n / 1e9)}B`;
+  if (abs >= 1e6) return `${trimOne(n / 1e6)}M`;
+  if (abs >= 1e3) return `${Math.round(n / 1e3)}K`;
+  return String(Math.round(n));
+}
+
+/** Whole number with thousands separators. */
+function fmtNum(value) {
+  if (value === null || value === undefined || value === '') return '—';
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  return n.toLocaleString('zh-CN');
+}
+
+/** ¥12.34, <¥0.01 for tiny non-zero values, — for missing data. */
+function fmtCNY(value) {
+  if (value === null || value === undefined || value === '') return '—';
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  const abs = Math.abs(n);
+  if (abs === 0) return '¥0.00';
+  if (abs < 0.01) return n < 0 ? '>-¥0.01' : '<¥0.01';
+  return `${n < 0 ? '-' : ''}¥${abs.toFixed(2)}`;
+}
+
+/** Signed CNY used for balance deltas. */
+function fmtSignedCNY(value) {
+  if (value === null || value === undefined) return '—';
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  if (Math.abs(n) < 0.005) return '±¥0.00';
+  return `${n > 0 ? '+' : '-'}${fmtCNY(Math.abs(n))}`;
+}
+
+/** Ratio (0..1) -> "12.3%". */
+function fmtPct(value) {
+  if (value === null || value === undefined) return '—';
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  return `${(n * 100).toFixed(1)}%`;
+}
+
+function fmtLatency(value) {
+  if (value === null || value === undefined) return '—';
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  if (n > 1000) return `${(n / 1000).toFixed(1)}s`;
+  return `${Math.round(n)}ms`;
+}
+
+/** Price numbers: keep up to 4 decimals but drop trailing zeros. */
+function fmtPrice(value) {
+  if (value === null || value === undefined) return '—';
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  return String(Number(n.toFixed(4)));
+}
+
+const SH_DATE_FMT = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Shanghai',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+const SH_TIME_FMT = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Asia/Shanghai',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+  hourCycle: 'h23',
+});
+
+/** Epoch ms -> YYYY-MM-DD in Asia/Shanghai. */
+function fmtDate(ms) {
+  const n = Number(ms);
+  if (!Number.isFinite(n)) return '—';
+  try {
+    return SH_DATE_FMT.format(new Date(n));
+  } catch {
+    return '—';
+  }
+}
+
+/** Epoch ms -> YYYY-MM-DD HH:mm:ss in Asia/Shanghai. */
+function fmtDateTime(ms) {
+  const n = Number(ms);
+  if (!Number.isFinite(n)) return '—';
+  try {
+    return `${fmtDate(n)} ${SH_TIME_FMT.format(new Date(n))}`;
+  } catch {
+    return '—';
+  }
+}
+
+function shortDay(day) {
+  const text = String(day ?? '');
+  return text.length >= 10 ? text.slice(5) : text;
+}
+
+/** Midnight (Asia/Shanghai) of the calendar day containing ms, as epoch ms. */
+function shanghaiMidnight(ms) {
+  const date = fmtDate(ms);
+  const [year, month, day] = date.split('-').map(Number);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+    return Number(ms) || 0;
+  }
+  return Date.UTC(year, month - 1, day) - SH_OFFSET_MS;
+}
+
+function rangeBounds() {
+  const now = Date.now();
+  if (state.range === 'all') return { from: 0, to: now };
+  if (state.range === 'today') return { from: shanghaiMidnight(now), to: now };
+  if (state.range === '30d') return { from: shanghaiMidnight(now - 29 * DAY_MS), to: now };
+  return { from: shanghaiMidnight(now - 6 * DAY_MS), to: now };
+}
+
+function rangePresetLabel() {
+  const preset = RANGE_PRESETS.find((item) => item.key === state.range);
+  return preset ? preset.label : '';
+}
+
+function rangeLabel() {
+  const { from, to } = rangeBounds();
+  if (state.range === 'all') return '全部时间';
+  return `${rangePresetLabel()} · ${fmtDate(from)} → ${fmtDate(to)}`;
+}
+
+/** Calendar days represented by the selected range (for daily averages). */
+function rangeDays() {
+  if (state.range === 'today') return 1;
+  if (state.range === '7d') return 7;
+  if (state.range === '30d') return 30;
+  return 0;
+}
+
+function qs(params) {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params ?? {})) {
+    if (value === undefined || value === null || value === '') continue;
+    search.set(key, String(value));
+  }
+  const text = search.toString();
+  return text ? `?${text}` : '';
+}
+
+/* ================================================================== fetch */
+
+async function getJSON(url, options = {}) {
+  let response;
+  try {
+    response = await fetch(url, { cache: 'no-store', ...options });
+  } catch (error) {
+    throw new Error(`网络请求失败：${error instanceof Error ? error.message : String(error)}`);
+  }
+  if (!response.ok) throw new Error(`请求失败（HTTP ${response.status}）`);
+  try {
+    return await response.json();
+  } catch {
+    throw new Error('服务返回了无法解析的响应');
+  }
+}
+
+function ensureOk(data) {
+  if (!data || typeof data !== 'object') throw new Error('服务返回了空响应');
+  if (data.ok === false) {
+    const reason = data.error ?? data.reason;
+    throw new Error(reason ? `服务返回错误：${String(reason)}` : '服务返回错误');
+  }
+  return data;
+}
+
+async function apiGet(path, params) {
+  return getJSON(`api/${path}${qs(params)}`);
+}
+
+async function apiPost(path, body) {
+  const options = { method: 'POST' };
+  if (body !== undefined) {
+    options.headers = { 'Content-Type': 'application/json' };
+    options.body = JSON.stringify(body);
+  }
+  return getJSON(`api/${path}`, options);
+}
+
+function fetchMetaSafe() {
+  return apiGet('meta').catch(() => null);
+}
+
+function fetchBalanceSafe() {
+  return apiGet('balance', {
+    v: '0.0.0',
+    locale: 'zh_CN',
+    tz: new Date().getTimezoneOffset() * 60,
+  });
+}
+
+/* ================================================================= router */
+
+function parseHash() {
+  const raw = (location.hash || '').replace(/^#\/?/, '');
+  const [pathPart, queryPart] = raw.split('?');
+  const route = ROUTES.includes(pathPart) ? pathPart : 'overview';
+  return { route, params: new URLSearchParams(queryPart || '') };
+}
+
+function syncStateFromHash() {
+  const { route, params } = parseHash();
+  state.route = route;
+  state.params = params;
+  const range = params.get('range');
+  if (RANGE_PRESETS.some((preset) => preset.key === range)) state.range = range;
+  state.model = params.get('model') ?? '';
+  state.session = params.get('session') ?? '';
+}
+
+function replaceHashParams(patch) {
+  const raw = (location.hash || '').replace(/^#\/?/, '');
+  const [, queryPart] = raw.split('?');
+  const params = new URLSearchParams(queryPart || '');
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === undefined || value === null || value === '') params.delete(key);
+    else params.set(key, String(value));
+  }
+  state.params = params;
+  const search = params.toString();
+  history.replaceState(null, '', `#/${state.route}${search ? `?${search}` : ''}`);
+}
+
+function setRange(key) {
+  if (!RANGE_PRESETS.some((preset) => preset.key === key)) return;
+  if (state.range === key) return;
+  state.range = key;
+  state.offset = 0;
+  replaceHashParams({ range: key });
+  render();
+}
+
+function isAlive(token) {
+  return token === renderSeq;
+}
+
+/* ======================================================= shared UI pieces */
+
+function loadingBlock(text = '加载中…') {
+  return `<div class="state" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span><span>${escapeHtml(text)}</span></div>`;
+}
+
+function loadingInline(text = '加载中…') {
+  return `<div class="state state-sm" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span><span>${escapeHtml(text)}</span></div>`;
+}
+
+function emptyBlock(text) {
+  return `<div class="empty">${escapeHtml(text)}</div>`;
+}
+
+function errorBlock(message, extra = '') {
+  return `<div class="error-box" role="alert">
+    <div class="error-title">加载失败</div>
+    <p>${escapeHtml(message)}</p>
+    ${extra}
+    <button type="button" class="btn" data-page-retry>重试</button>
+  </div>`;
+}
+
+function bindPageRetry(root) {
+  const button = root.querySelector('[data-page-retry]');
+  if (button) button.addEventListener('click', () => render());
+}
+
+function kpiCard(label, value, sub, tone = '') {
+  return `<section class="card kpi ${tone ? `kpi-${tone}` : ''}">
+    <div class="kpi-label">${escapeHtml(label)}</div>
+    <div class="kpi-value">${value}</div>
+    <div class="kpi-sub" title="${escapeHtml(String(sub ?? ''))}">${escapeHtml(sub ?? '')}</div>
+  </section>`;
+}
+
+function rankBarCell(value, max, format) {
+  const ratio = max > 0 ? Math.max(0, Math.min(1, Number(value) / max)) : 0;
+  return `<div class="bar-cell"><span class="bar-track"><span class="bar-fill" style="width:${(ratio * 100).toFixed(1)}%"></span></span><span class="bar-value">${format(value)}</span></div>`;
+}
+
+function legendHtml(segments, format) {
+  const total = sumBy(segments, (item) => item.value);
+  return `<ul class="donut-legend">${(segments ?? []).map((item) => {
+    const value = Number(item.value) || 0;
+    return `<li>
+      <span class="dot" style="background:${item.color}"></span>
+      <span class="legend-name" title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</span>
+      <span class="legend-value">${format(value)}</span>
+      <span class="legend-pct">${total > 0 ? fmtPct(value / total) : '—'}</span>
+    </li>`;
+  }).join('')}</ul>`;
+}
+
+/* ================================================================= charts */
+
+function niceMax(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return 1;
+  const exponent = Math.floor(Math.log10(n));
+  const base = 10 ** exponent;
+  const fraction = n / base;
+  const nice = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 2.5 ? 2.5 : fraction <= 5 ? 5 : 10;
+  return nice * base;
+}
+
+function fmtCnyAxis(value) {
+  const n = Number(value) || 0;
+  if (n >= 10000) return `¥${(n / 1000).toFixed(0)}k`;
+  if (n >= 1000) return `¥${(n / 1000).toFixed(1).replace(/\.0$/, '')}k`;
+  if (n >= 100) return `¥${Math.round(n)}`;
+  if (n >= 10) return `¥${n.toFixed(0)}`;
+  if (n >= 1) return `¥${n.toFixed(1).replace(/\.0$/, '')}`;
+  if (n === 0) return '¥0';
+  return `¥${n.toFixed(2)}`;
+}
+
+/**
+ * Daily chart: cost line + requests bars (overview) or cost bars (cost page).
+ * Renders one point gracefully; returns '' when there is nothing to draw.
+ */
+function dailyChartSvg(daily, mode = 'overview') {
+  const rows = (daily ?? []).map((item) => ({
+    day: String(item?.day ?? ''),
+    cost: Math.max(0, Number(item?.cost) || 0),
+    requests: Math.max(0, Number(item?.requests) || 0),
+  })).filter((item) => item.day !== '');
+  if (rows.length === 0) return '';
+
+  const W = 760;
+  const H = 240;
+  const padL = 56;
+  const padR = 18;
+  const padT = 18;
+  const padB = 30;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const baseY = padT + innerH;
+  const n = rows.length;
+  const yMax = niceMax(Math.max(...rows.map((row) => row.cost), 0.01));
+  const maxRequests = Math.max(...rows.map((row) => row.requests), 1);
+  const X = (index) => (n === 1 ? padL + innerW / 2 : padL + (innerW * index) / (n - 1));
+  const Y = (value) => padT + innerH - (Math.min(value, yMax) / yMax) * innerH;
+  const barWidth = n === 1 ? Math.min(48, innerW * 0.4) : Math.max(1.5, Math.min(16, (innerW / n) * 0.55));
+  const gradientId = nextChartId('grad');
+  const parts = [];
+
+  parts.push(`<defs><linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5686fe" stop-opacity="0.30"/><stop offset="1" stop-color="#5686fe" stop-opacity="0"/></linearGradient></defs>`);
+
+  for (let tick = 0; tick <= 4; tick += 1) {
+    const value = (yMax * tick) / 4;
+    const y = Y(value);
+    parts.push(`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#23262f" stroke-width="1"/>`);
+    parts.push(`<text x="${padL - 9}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" class="axis-label">${escapeHtml(fmtCnyAxis(value))}</text>`);
+  }
+
+  if (mode === 'overview') {
+    for (let index = 0; index < n; index += 1) {
+      const row = rows[index];
+      if (row.requests <= 0) continue;
+      const height = (row.requests / maxRequests) * innerH * 0.62;
+      parts.push(`<rect x="${(X(index) - barWidth / 2).toFixed(1)}" y="${(baseY - height).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${height.toFixed(1)}" rx="2" fill="#3a4254" fill-opacity="0.55"><title>${escapeHtml(row.day)} · 请求 ${escapeHtml(fmtNum(row.requests))}</title></rect>`);
+    }
+  } else {
+    for (let index = 0; index < n; index += 1) {
+      const row = rows[index];
+      if (row.cost <= 0) continue;
+      const height = Math.max(1, (row.cost / yMax) * innerH);
+      parts.push(`<rect x="${(X(index) - barWidth / 2).toFixed(1)}" y="${(baseY - height).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${height.toFixed(1)}" rx="2" fill="#5686fe" fill-opacity="0.8"><title>${escapeHtml(row.day)} · 成本 ${escapeHtml(fmtCNY(row.cost))} · 请求 ${escapeHtml(fmtNum(row.requests))}</title></rect>`);
+    }
+  }
+
+  const points = rows.map((row, index) => `${X(index).toFixed(1)},${Y(row.cost).toFixed(1)}`);
+  if (n > 1) {
+    const areaPath = `M ${X(0).toFixed(1)} ${baseY.toFixed(1)} L ${points.join(' L ')} L ${X(n - 1).toFixed(1)} ${baseY.toFixed(1)} Z`;
+    parts.push(`<path d="${areaPath}" fill="url(#${gradientId})"/>`);
+    parts.push(`<polyline points="${points.join(' ')}" fill="none" stroke="#5686fe" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`);
+  } else {
+    const y = Y(rows[0].cost);
+    parts.push(`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#5686fe" stroke-width="2" stroke-linecap="round"/>`);
+  }
+
+  if (n <= 62) {
+    for (let index = 0; index < n; index += 1) {
+      const row = rows[index];
+      parts.push(`<circle cx="${X(index).toFixed(1)}" cy="${Y(row.cost).toFixed(1)}" r="${n === 1 ? 4 : 2.6}" fill="#0a0a0a" stroke="#5686fe" stroke-width="1.8"><title>${escapeHtml(row.day)} · 成本 ${escapeHtml(fmtCNY(row.cost))} · 请求 ${escapeHtml(fmtNum(row.requests))}</title></circle>`);
+    }
+  }
+
+  const labelStep = Math.max(1, Math.ceil(n / 6));
+  for (let index = 0; index < n; index += 1) {
+    if (index % labelStep !== 0 && index !== n - 1) continue;
+    parts.push(`<text x="${X(index).toFixed(1)}" y="${H - 8}" text-anchor="middle" class="axis-label">${escapeHtml(shortDay(rows[index].day))}</text>`);
+  }
+
+  const aria = mode === 'cost' ? '每日成本柱状图' : '每日成本与请求图';
+  return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHtml(aria)}">${parts.join('')}</svg>`;
+}
+
+/**
+ * Generic single-series line chart (balance history, etc.).
+ * points: [{ label, value, title }]
+ */
+function lineChartSvg(points, options = {}) {
+  const rows = (points ?? []).map((item) => ({
+    label: String(item?.label ?? ''),
+    value: Number(item?.value) || 0,
+    title: String(item?.title ?? ''),
+  }));
+  if (rows.length === 0) return '';
+
+  const W = 760;
+  const H = 220;
+  const padL = 62;
+  const padR = 18;
+  const padT = 18;
+  const padB = 30;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const baseY = padT + innerH;
+  const n = rows.length;
+  const color = options.color ?? '#5686fe';
+  const formatAxis = options.formatAxis ?? fmtCnyAxis;
+  const yMax = niceMax(Math.max(...rows.map((row) => row.value), options.minTop ?? 0.01));
+  const X = (index) => (n === 1 ? padL + innerW / 2 : padL + (innerW * index) / (n - 1));
+  const Y = (value) => padT + innerH - (Math.min(value, yMax) / yMax) * innerH;
+  const gradientId = nextChartId('grad');
+  const parts = [];
+
+  parts.push(`<defs><linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity="0.26"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>`);
+  for (let tick = 0; tick <= 4; tick += 1) {
+    const value = (yMax * tick) / 4;
+    const y = Y(value);
+    parts.push(`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#23262f" stroke-width="1"/>`);
+    parts.push(`<text x="${padL - 9}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" class="axis-label">${escapeHtml(formatAxis(value))}</text>`);
+  }
+
+  const pointsText = rows.map((row, index) => `${X(index).toFixed(1)},${Y(row.value).toFixed(1)}`);
+  if (n > 1) {
+    parts.push(`<path d="M ${X(0).toFixed(1)} ${baseY.toFixed(1)} L ${pointsText.join(' L ')} L ${X(n - 1).toFixed(1)} ${baseY.toFixed(1)} Z" fill="url(#${gradientId})"/>`);
+    parts.push(`<polyline points="${pointsText.join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`);
+  } else {
+    const y = Y(rows[0].value);
+    parts.push(`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${color}" stroke-width="2" stroke-linecap="round"/>`);
+  }
+
+  if (n <= 70) {
+    for (let index = 0; index < n; index += 1) {
+      parts.push(`<circle cx="${X(index).toFixed(1)}" cy="${Y(rows[index].value).toFixed(1)}" r="${n === 1 ? 4 : 2.4}" fill="#0a0a0a" stroke="${color}" stroke-width="1.7"><title>${escapeHtml(rows[index].title || rows[index].label)}</title></circle>`);
+    }
+  }
+
+  const labelStep = Math.max(1, Math.ceil(n / 6));
+  for (let index = 0; index < n; index += 1) {
+    if (index % labelStep !== 0 && index !== n - 1) continue;
+    parts.push(`<text x="${X(index).toFixed(1)}" y="${H - 8}" text-anchor="middle" class="axis-label">${escapeHtml(rows[index].label)}</text>`);
+  }
+
+  return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHtml(options.ariaLabel ?? '折线图')}">${parts.join('')}</svg>`;
+}
+
+/** Donut built from stroked circles with dash arrays. */
+function donutSvg(segments, options = {}) {
+  const size = options.size ?? 180;
+  const stroke = options.stroke ?? 22;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const center = size / 2;
+  const items = (segments ?? [])
+    .map((item) => ({ ...item, value: Math.max(0, Number(item.value) || 0) }))
+    .filter((item) => item.value > 0);
+  const total = sumBy(items, (item) => item.value);
+  const formatValue = options.formatValue ?? fmtTokens;
+  let inner = '';
+
+  if (total <= 0) {
+    inner = `<circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="#23262f" stroke-width="${stroke}"/>`;
+  } else {
+    let offset = 0;
+    for (const item of items) {
+      const length = (item.value / total) * circumference;
+      inner += `<circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="${item.color}" stroke-width="${stroke}" stroke-dasharray="${length.toFixed(2)} ${(circumference - length).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" transform="rotate(-90 ${center} ${center})"><title>${escapeHtml(item.label)}：${escapeHtml(formatValue(item.value))}（${fmtPct(item.value / total)}）</title></circle>`;
+      offset += length;
+    }
+  }
+
+  const centerValue = options.centerValue ?? '';
+  const centerLabel = options.centerLabel ?? '';
+  const centerText = centerValue === ''
+    ? ''
+    : `<text x="${center}" y="${center - 1}" text-anchor="middle" class="donut-value">${escapeHtml(centerValue)}</text><text x="${center}" y="${center + 16}" text-anchor="middle" class="donut-label">${escapeHtml(centerLabel)}</text>`;
+
+  return `<svg class="donut-svg" viewBox="0 0 ${size} ${size}" role="img" aria-label="${escapeHtml(options.ariaLabel ?? '环形图')}">${inner}${centerText}</svg>`;
+}
+
+/* ================================================================ balance */
+
+function balanceReasonText(reason) {
+  if (reason === null || reason === undefined || reason === '') return '未能获取账户余额。';
+  const text = String(reason);
+  if (text === 'no-account') return '未找到 DeepSeek 账户凭据（可能尚未登录或未配置账户）。';
+  if (text === 'platform-rejected') return '账户服务拒绝了该请求。';
+  if (text.startsWith('http-')) return `账户服务返回 HTTP ${text.slice(5)}。`;
+  return text;
+}
+
+function walletValue(wallet) {
+  const n = Number(wallet?.balance);
+  return Number.isFinite(n) ? n : null;
+}
+
+function walletText(wallet) {
+  const n = walletValue(wallet);
+  return n === null ? escapeHtml(wallet?.balance ?? '—') : fmtCNY(n);
+}
+
+function walletTotal(wallets) {
+  return sumBy(wallets, (wallet) => walletValue(wallet) ?? 0);
+}
+
+function balanceUnavailableHtml(reason) {
+  return `<div class="empty" style="padding:18px 8px 10px">余额不可用</div>
+    <p class="note" style="margin-top:0">${escapeHtml(balanceReasonText(reason))}</p>
+    <div class="actions-row" style="margin-top:8px">
+      <button type="button" class="btn btn-sm" data-balance-retry>重试</button>
+    </div>`;
+}
+
+function balanceHtml(data) {
+  const wallets = Array.isArray(data?.wallets) ? data.wallets : [];
+  const bonusWallets = Array.isArray(data?.bonusWallets) ? data.bonusWallets : [];
+  const cnyWallets = wallets.filter((wallet) => String(wallet?.currency ?? '').toUpperCase() === 'CNY');
+  const primaryWallets = cnyWallets.length > 0 ? cnyWallets : wallets;
+  const primaryTotal = walletTotal(primaryWallets);
+  const bonusTotal = walletTotal(bonusWallets);
+  const viaText = data?.via === 'service'
+    ? '来源：DeepSeek 账户服务'
+    : data?.via === 'direct'
+      ? '来源：账户接口'
+      : '';
+
+  if (primaryWallets.length === 0 && bonusWallets.length === 0) {
+    return balanceUnavailableHtml('no-wallets');
+  }
+
+  const primaryList = primaryWallets.length > 0
+    ? `<ul class="wallet-list">${primaryWallets.map((wallet) => `<li><span>${escapeHtml(wallet?.currency ?? '—')} 钱包</span><span class="num">${walletText(wallet)}</span></li>`).join('')}</ul>`
+    : '';
+
+  const bonusBlock = bonusWallets.length > 0
+    ? `<div class="bonus-block"><span class="bonus-label">赠送余额</span><span class="num">${fmtCNY(bonusTotal)}</span></div>
+       <ul class="wallet-list">${bonusWallets.map((wallet) => `<li><span>${escapeHtml(wallet?.currency ?? '—')} 赠送</span><span class="num">${walletText(wallet)}</span></li>`).join('')}</ul>`
+    : '';
+
+  return `<div class="balance-main">
+      <div class="balance-amount">${fmtCNY(primaryTotal)}</div>
+      <div class="balance-caption">${cnyWallets.length > 0 ? 'CNY 可用余额' : '账户余额'}</div>
+    </div>
+    ${primaryList}
+    ${bonusBlock}
+    ${viaText ? `<div class="balance-foot">${escapeHtml(viaText)}</div>` : ''}`;
+}
+
+/**
+ * Fetch the account balance into a slot. `onData(data, reason)` lets a page
+ * reuse the value for derived widgets (cost vs balance card).
+ */
+async function loadBalance(slot, token, onData = () => {}) {
+  slot.innerHTML = loadingInline('加载余额…');
+  try {
+    const data = await fetchBalanceSafe();
+    if (!isAlive(token)) return;
+    if (!data || data.ok === false) {
+      const reason = data?.reason ?? data?.error ?? 'unknown';
+      slot.innerHTML = balanceUnavailableHtml(reason);
+      const retry = slot.querySelector('[data-balance-retry]');
+      if (retry) retry.addEventListener('click', () => loadBalance(slot, token, onData));
+      onData(null, reason);
+      return;
+    }
+    slot.innerHTML = balanceHtml(data);
+    onData(data, null);
+  } catch (error) {
+    if (!isAlive(token)) return;
+    const message = error instanceof Error ? error.message : String(error);
+    slot.innerHTML = balanceUnavailableHtml(message);
+    const retry = slot.querySelector('[data-balance-retry]');
+    if (retry) retry.addEventListener('click', () => loadBalance(slot, token, onData));
+    onData(null, message);
+  }
+}
+
+/* ================================================================ overview */
+
+function modelCostSegments(byModel) {
+  const sorted = [...(byModel ?? [])].sort((a, b) => (Number(b?.cost) || 0) - (Number(a?.cost) || 0));
+  const top = sorted.slice(0, 5);
+  const segments = top.map((item, index) => ({
+    label: item?.model ?? '未知模型',
+    value: Math.max(0, Number(item?.cost) || 0),
+    color: MODEL_COLORS[index % MODEL_COLORS.length],
+  })).filter((item) => item.value > 0);
+  const restCost = sumBy(sorted.slice(5), (item) => item.cost);
+  if (restCost > 0) segments.push({ label: '其他', value: restCost, color: '#596070' });
+  return segments;
+}
+
+function topModelList(byModel) {
+  const sorted = [...(byModel ?? [])]
+    .sort((a, b) => (Number(b?.cost) || 0) - (Number(a?.cost) || 0))
+    .slice(0, 5);
+  if (sorted.length === 0) return emptyBlock('暂无模型数据');
+  const maxCost = Math.max(...sorted.map((item) => Number(item?.cost) || 0), 0.000001);
+  return `<div class="rank-list">${sorted.map((item, index) => {
+    const cost = Number(item?.cost) || 0;
+    const width = Math.max(2, (cost / maxCost) * 100);
+    return `<div class="rank-row">
+      <span class="rank-no">${index + 1}</span>
+      <span class="rank-name" title="${escapeHtml(item?.model ?? '未知模型')}">${escapeHtml(item?.model ?? '未知模型')}
+        <span class="rank-meta">${escapeHtml(fmtNum(item?.requests))} 次请求</span>
+      </span>
+      <span class="rank-cost">${fmtCNY(cost)}</span>
+      <span class="rank-bar"><span style="width:${width.toFixed(1)}%"></span></span>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+async function renderOverview(root, token) {
+  root.innerHTML = loadingBlock('加载概览数据…');
+  let data;
+  try {
+    data = await apiGet('summary', rangeBounds());
+    ensureOk(data);
+  } catch (error) {
+    if (!isAlive(token)) return;
+    root.innerHTML = errorBlock(error instanceof Error ? error.message : String(error));
+    bindPageRetry(root);
+    return;
+  }
+  if (!isAlive(token)) return;
+
+  const totals = data.totals ?? {};
+  const byModel = Array.isArray(data.byModel) ? data.byModel : [];
+  const daily = Array.isArray(data.daily) ? data.daily : [];
+  const requests = Number(totals.requests) || 0;
+  const totalTokens = (Number(totals.input) || 0) + (Number(totals.cacheRead) || 0) + (Number(totals.output) || 0);
+  const days = state.range === 'all' ? Math.max(1, daily.length) : Math.max(1, rangeDays());
+  const requestsPerDay = requests / days;
+  const segments = modelCostSegments(byModel);
+  const totalCost = Number(totals.cost) || 0;
+  const hasData = requests > 0;
+
+  root.innerHTML = `
+    ${hasData ? '' : `<div class="card empty-banner" role="status">该时间范围内暂无数据。可切换时间范围，或等待本机会话日志被索引。</div>`}
+    <div class="kpi-grid">
+      ${kpiCard('总成本', fmtCNY(totals.cost), `每请求均价 ${fmtCNY(totals.avgCost)}`)}
+      ${kpiCard('请求数', fmtNum(totals.requests), `日均 ${fmtNum(Math.round(requestsPerDay * 10) / 10)} 次`, 'accent')}
+      ${kpiCard('总 token', fmtTokens(totalTokens), `输入 ${fmtTokens(totals.input)} · 缓存 ${fmtTokens(totals.cacheRead)} · 输出 ${fmtTokens(totals.output)}`)}
+      ${kpiCard('缓存命中率', fmtPct(totals.cacheHitRate), `缓存命中 ${fmtTokens(totals.cacheRead)} token`, 'success')}
+    </div>
+
+    <section class="card">
+      <div class="card-head">
+        <div><h2>每日成本与请求</h2><p class="card-sub">线：成本（CNY） · 柱：请求数</p></div>
+      </div>
+      ${daily.length > 0 ? `<div class="chart">${dailyChartSvg(daily, 'overview')}</div>` : emptyBlock('该范围内没有每日数据')}
+    </section>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head"><div><h2>模型成本占比</h2><p class="card-sub">前 5 名 + 其他</p></div></div>
+        ${segments.length > 0
+          ? `<div class="donut-row">
+               ${donutSvg(segments, { centerValue: fmtCNY(totalCost), centerLabel: '总成本', formatValue: fmtCNY, ariaLabel: '模型成本占比' })}
+               ${legendHtml(segments, fmtCNY)}
+             </div>`
+          : `<div class="donut-row">${donutSvg([], { ariaLabel: '模型成本占比' })}${emptyBlock('暂无成本数据')}</div>`}
+      </section>
+      <section class="card">
+        <div class="card-head"><div><h2>模型成本前 5</h2><p class="card-sub">按估算成本降序</p></div></div>
+        ${topModelList(byModel)}
+      </section>
+    </div>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head">
+          <div><h2>账户余额</h2><p class="card-sub">来自 DeepSeek 账户服务</p></div>
+          <div class="head-actions"><button type="button" class="btn btn-sm" id="balance-refresh">刷新</button></div>
+        </div>
+        <div id="balance-slot" aria-live="polite">${loadingInline('加载余额…')}</div>
+        <p class="note">仅用于参考，实际可用余额以 DeepSeek 官网为准。</p>
+      </section>
+      <section class="card">
+        <div class="card-head"><div><h2>说明</h2></div></div>
+        <dl class="stat-list">
+          <div><dt>统计范围</dt><dd>${escapeHtml(rangeLabel())}</dd></div>
+          <div><dt>缓存写入</dt><dd class="num">${fmtTokens(totals.cacheWrite)}</dd></div>
+          <div><dt>平均延迟</dt><dd class="num">${fmtLatency(totals.latency)}</dd></div>
+          <div><dt>模型数</dt><dd class="num">${fmtNum(byModel.length)}</dd></div>
+        </dl>
+        <p class="note">由本机会话日志统计，非官方账单。成本按官方价格表估算，实际扣费以 DeepSeek 账单为准。</p>
+      </section>
+    </div>`;
+
+  const slot = root.querySelector('#balance-slot');
+  const refresh = root.querySelector('#balance-refresh');
+  if (slot) loadBalance(slot, token);
+  if (refresh && slot) {
+    refresh.addEventListener('click', () => loadBalance(slot, token));
+  }
+}
+
+/* ================================================================== models */
+
+let modelsSort = { key: 'cost', dir: 'desc' };
+const MODEL_COLUMNS = [
+  { key: 'model', label: '模型', numeric: false },
+  { key: 'provider', label: '提供方', numeric: false },
+  { key: 'requests', label: '请求数', numeric: true },
+  { key: 'input', label: '输入（未命中）', numeric: true },
+  { key: 'cacheRead', label: '缓存命中', numeric: true },
+  { key: 'output', label: '输出', numeric: true },
+  { key: 'cost', label: '成本', numeric: true },
+  { key: 'latency', label: '平均延迟', numeric: true },
+  { key: 'peakShare', label: '峰时占比', numeric: true },
+];
+
+function compareModels(a, b, key, dir) {
+  const sign = dir === 'asc' ? 1 : -1;
+  if (key === 'model' || key === 'provider') {
+    return String(a?.[key] ?? '').localeCompare(String(b?.[key] ?? ''), 'zh-CN') * sign;
+  }
+  return ((Number(a?.[key]) || 0) - (Number(b?.[key]) || 0)) * sign;
+}
+
+async function renderModels(root, token) {
+  root.innerHTML = loadingBlock('加载模型数据…');
+  let modelsData;
+  let summaryData;
+  try {
+    [modelsData, summaryData] = await Promise.all([
+      apiGet('models', rangeBounds()),
+      apiGet('summary', rangeBounds()),
+    ]);
+    ensureOk(modelsData);
+    ensureOk(summaryData);
+  } catch (error) {
+    if (!isAlive(token)) return;
+    root.innerHTML = errorBlock(error instanceof Error ? error.message : String(error));
+    bindPageRetry(root);
+    return;
+  }
+  if (!isAlive(token)) return;
+
+  const models = Array.isArray(modelsData.models) ? modelsData.models : [];
+  const totals = summaryData.totals ?? {};
+  const tokenSegments = [
+    { label: '输入（未命中）', value: Number(totals.input) || 0, color: TOKEN_COLORS.input },
+    { label: '缓存命中', value: Number(totals.cacheRead) || 0, color: TOKEN_COLORS.cache },
+    { label: '输出', value: Number(totals.output) || 0, color: TOKEN_COLORS.output },
+  ].filter((item) => item.value > 0);
+  const tokenTotal = sumBy(tokenSegments, (item) => item.value);
+
+  root.innerHTML = `
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head"><div><h2>Token 构成</h2><p class="card-sub">输入 / 缓存命中 / 输出</p></div></div>
+        ${tokenTotal > 0
+          ? `<div class="donut-row">
+               ${donutSvg(tokenSegments, { centerValue: fmtTokens(tokenTotal), centerLabel: '总 token', ariaLabel: 'token 构成' })}
+               ${legendHtml(tokenSegments, fmtTokens)}
+             </div>`
+          : `<div class="donut-row">${donutSvg([], { ariaLabel: 'token 构成' })}${emptyBlock('暂无 token 数据')}</div>`}
+      </section>
+      <section class="card">
+        <div class="card-head"><div><h2>模型概览</h2><p class="card-sub">当前时间范围</p></div></div>
+        <dl class="stat-grid">
+          <div><dt>模型数</dt><dd>${fmtNum(models.length)}</dd></div>
+          <div><dt>总请求</dt><dd>${fmtNum(totals.requests)}</dd></div>
+          <div><dt>总成本</dt><dd>${fmtCNY(totals.cost)}</dd></div>
+          <div><dt>平均延迟</dt><dd>${fmtLatency(totals.latency)}</dd></div>
+        </dl>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="card-head"><div><h2>模型明细</h2><p class="card-sub">默认按成本降序 · 点击表头排序</p></div></div>
+      ${models.length > 0
+        ? `<div class="table-wrap">
+             <table class="data" aria-label="模型明细">
+               <thead><tr>${MODEL_COLUMNS.map((column) => `<th scope="col" data-sort="${column.key}" class="${column.numeric ? 'num' : ''}">
+                 <button type="button" class="sort-btn">${escapeHtml(column.label)}<span class="sort-arrow" aria-hidden="true"></span></button>
+               </th>`).join('')}</tr></thead>
+               <tbody id="model-rows"></tbody>
+             </table>
+           </div>`
+        : emptyBlock('该范围内没有模型数据')}
+    </section>`;
+
+  if (models.length === 0) return;
+  const tbody = root.querySelector('#model-rows');
+  if (!tbody) return;
+
+  const paint = () => {
+    const sorted = [...models].sort((a, b) => compareModels(a, b, modelsSort.key, modelsSort.dir));
+    tbody.innerHTML = sorted.map((item) => `<tr>
+      <td><span class="model-tag">${escapeHtml(item?.model ?? '未知模型')}</span></td>
+      <td class="muted">${escapeHtml(item?.provider ?? '—')}</td>
+      <td class="num">${fmtNum(item?.requests)}</td>
+      <td class="num">${fmtTokens(item?.input)}</td>
+      <td class="num">${fmtTokens(item?.cacheRead)}</td>
+      <td class="num">${fmtTokens(item?.output)}</td>
+      <td class="num">${fmtCNY(item?.cost)}</td>
+      <td class="num">${fmtLatency(item?.latency)}</td>
+      <td class="num">${fmtPct(item?.peakShare)}</td>
+    </tr>`).join('');
+    root.querySelectorAll('th[data-sort]').forEach((th) => {
+      const active = th.dataset.sort === modelsSort.key;
+      th.setAttribute('aria-sort', active ? (modelsSort.dir === 'asc' ? 'ascending' : 'descending') : 'none');
+      const arrow = th.querySelector('.sort-arrow');
+      if (arrow) arrow.textContent = active ? (modelsSort.dir === 'asc' ? '▲' : '▼') : '';
+    });
+  };
+
+  root.querySelectorAll('th[data-sort]').forEach((th) => {
+    const button = th.querySelector('.sort-btn');
+    if (!button) return;
+    button.addEventListener('click', () => {
+      const key = th.dataset.sort;
+      if (!key) return;
+      if (modelsSort.key === key) {
+        modelsSort = { key, dir: modelsSort.dir === 'desc' ? 'asc' : 'desc' };
+      } else {
+        modelsSort = { key, dir: key === 'model' || key === 'provider' ? 'asc' : 'desc' };
+      }
+      paint();
+    });
+  });
+
+  paint();
+}
+
+/* ================================================================ sessions */
+
+function shortSessionId(id) {
+  const text = String(id ?? '');
+  if (text.length <= 30) return text;
+  return `${text.slice(0, 15)}…${text.slice(-8)}`;
+}
+
+function navigateToRequests(sessionId) {
+  const params = new URLSearchParams();
+  if (state.range) params.set('range', state.range);
+  if (sessionId) params.set('session', sessionId);
+  location.hash = `#/requests${params.toString() ? `?${params.toString()}` : ''}`;
+}
+
+function workspacesTable(workspaces) {
+  const maxCost = Math.max(...workspaces.map((item) => Number(item?.cost) || 0), 0.000001);
+  return `<div class="table-wrap">
+    <table class="data" aria-label="工作区排行">
+      <thead><tr>
+        <th scope="col">工作区</th>
+        <th scope="col">路径</th>
+        <th scope="col" class="num">会话数</th>
+        <th scope="col" class="num">请求数</th>
+        <th scope="col" class="num">成本</th>
+        <th scope="col" class="num">输入（未命中）</th>
+        <th scope="col" class="num">缓存命中</th>
+        <th scope="col" class="num">输出</th>
+      </tr></thead>
+      <tbody>${workspaces.map((item) => `<tr>
+        <td><span class="truncate" title="${escapeHtml(item?.workspace ?? item?.cwd ?? '')}">${escapeHtml(item?.workspace ?? '未命名工作区')}</span></td>
+        <td class="muted"><span class="truncate" title="${escapeHtml(item?.cwd ?? '')}">${escapeHtml(item?.cwd ?? '—')}</span></td>
+        <td class="num">${fmtNum(item?.sessions)}</td>
+        <td class="num">${fmtNum(item?.requests)}</td>
+        <td class="num">${rankBarCell(item?.cost, maxCost, fmtCNY)}</td>
+        <td class="num">${fmtTokens(item?.input)}</td>
+        <td class="num">${fmtTokens(item?.cacheRead)}</td>
+        <td class="num">${fmtTokens(item?.output)}</td>
+      </tr>`).join('')}</tbody>
+    </table>
+  </div>`;
+}
+
+function sessionsTable(sessions) {
+  return `<div class="table-wrap">
+    <table class="data" aria-label="会话排行">
+      <thead><tr>
+        <th scope="col">标题</th>
+        <th scope="col">工作区</th>
+        <th scope="col" class="num">请求数</th>
+        <th scope="col" class="num">成本</th>
+        <th scope="col" class="num">最后活跃</th>
+      </tr></thead>
+      <tbody>${sessions.map((item) => {
+        const id = String(item?.id ?? '');
+        const title = item?.title || id || '未命名会话';
+        return `<tr class="row-link" tabindex="0" role="link" data-session="${escapeHtml(id)}" aria-label="查看会话 ${escapeHtml(title)} 的请求记录">
+          <td><span class="truncate" title="${escapeHtml(title)}">${escapeHtml(title)}</span></td>
+          <td class="muted"><span class="truncate" title="${escapeHtml(item?.workspace ?? item?.cwd ?? '')}">${escapeHtml(item?.workspace ?? item?.cwd ?? '—')}</span></td>
+          <td class="num">${fmtNum(item?.requests)}</td>
+          <td class="num">${fmtCNY(item?.cost)}</td>
+          <td class="num">${fmtDateTime(item?.lastAt)}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>
+  </div>`;
+}
+
+async function renderSessions(root, token) {
+  root.innerHTML = loadingBlock('加载会话与工作区…');
+  let workspaceData;
+  let sessionData;
+  try {
+    [workspaceData, sessionData] = await Promise.all([
+      apiGet('workspaces', rangeBounds()),
+      apiGet('sessions', { ...rangeBounds(), limit: 50, offset: 0 }),
+    ]);
+    ensureOk(workspaceData);
+    ensureOk(sessionData);
+  } catch (error) {
+    if (!isAlive(token)) return;
+    root.innerHTML = errorBlock(error instanceof Error ? error.message : String(error));
+    bindPageRetry(root);
+    return;
+  }
+  if (!isAlive(token)) return;
+
+  const workspaces = Array.isArray(workspaceData.workspaces) ? workspaceData.workspaces : [];
+  const sessions = Array.isArray(sessionData.sessions) ? sessionData.sessions : [];
+
+  root.innerHTML = `
+    <section class="card">
+      <div class="card-head"><div><h2>工作区排行</h2><p class="card-sub">按估算成本降序 · 共 ${fmtNum(workspaces.length)} 个工作区</p></div></div>
+      ${workspaces.length > 0 ? workspacesTable(workspaces) : emptyBlock('该范围内没有工作区数据')}
+    </section>
+    <section class="card">
+      <div class="card-head"><div><h2>会话排行</h2><p class="card-sub">前 50 个 · 点击行可筛选该会话的请求记录</p></div></div>
+      ${sessions.length > 0 ? sessionsTable(sessions) : emptyBlock('该范围内没有会话数据')}
+    </section>`;
+
+  root.querySelectorAll('tr[data-session]').forEach((row) => {
+    const go = () => navigateToRequests(row.dataset.session);
+    row.addEventListener('click', go);
+    row.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        go();
+      }
+    });
+  });
+}
+
+/* ================================================================ requests */
+
+function turnStepLabel(turn, step) {
+  const parts = [];
+  if (turn !== null && turn !== undefined) parts.push(`第 ${turn} 轮`);
+  if (step !== null && step !== undefined) parts.push(`第 ${step} 步`);
+  return parts.length > 0 ? parts.join(' · ') : '—';
+}
+
+function peakBadge(peak) {
+  if (peak === null || peak === undefined) return `<span class="badge off">—</span>`;
+  return Number(peak) ? `<span class="badge peak">峰</span>` : `<span class="badge off">谷</span>`;
+}
+
+function paintRequestFilters(ctx, meta) {
+  const container = ctx.root.querySelector('#req-filters');
+  if (!container) return;
+  const modelSet = new Set(Array.isArray(meta?.models) ? meta.models.filter(Boolean) : []);
+  if (ctx.model) modelSet.add(ctx.model);
+  const models = [...modelSet].sort((a, b) => String(a).localeCompare(String(b), 'zh-CN'));
+  container.innerHTML = `
+    <label class="field"><span>模型</span>
+      <select id="req-model" aria-label="按模型筛选">
+        <option value="">全部模型</option>
+        ${models.map((model) => `<option value="${escapeHtml(model)}"${model === ctx.model ? ' selected' : ''}>${escapeHtml(model)}</option>`).join('')}
+      </select>
+    </label>
+    ${ctx.session ? `<span class="chip">会话 <code title="${escapeHtml(ctx.session)}">${escapeHtml(shortSessionId(ctx.session))}</code><button type="button" id="req-session-clear" aria-label="清除会话筛选">×</button></span>` : ''}
+    <span class="filter-spacer"></span>
+    <span class="hint">每页 ${PAGE_SIZE} 条</span>`;
+
+  const select = container.querySelector('#req-model');
+  if (select) {
+    select.addEventListener('change', () => {
+      ctx.model = select.value;
+      ctx.offset = 0;
+      state.model = ctx.model;
+      state.offset = 0;
+      replaceHashParams({ model: ctx.model || null });
+      loadRequestPage(ctx);
+    });
+  }
+  const clear = container.querySelector('#req-session-clear');
+  if (clear) {
+    clear.addEventListener('click', () => {
+      ctx.session = '';
+      ctx.offset = 0;
+      state.session = '';
+      state.offset = 0;
+      replaceHashParams({ session: null });
+      paintRequestFilters(ctx, meta);
+      loadRequestPage(ctx);
+    });
+  }
+}
+
+function renderRequestRows(ctx, rows) {
+  if (rows.length === 0) {
+    ctx.listEl.innerHTML = emptyBlock('该条件下没有请求记录');
+    return;
+  }
+  ctx.listEl.innerHTML = `<div class="table-wrap">
+    <table class="data" aria-label="请求记录">
+      <thead><tr>
+        <th scope="col">时间</th>
+        <th scope="col">模型</th>
+        <th scope="col" class="num">轮次 / 步骤</th>
+        <th scope="col" class="num">输入</th>
+        <th scope="col" class="num">缓存</th>
+        <th scope="col" class="num">输出</th>
+        <th scope="col" class="num">成本</th>
+        <th scope="col">峰时</th>
+        <th scope="col" class="num">延迟</th>
+      </tr></thead>
+      <tbody>${rows.map((item) => {
+        const provider = item?.provider ?? '未知提供方';
+        const effort = item?.reasoning_effort ? ` · ${item.reasoning_effort}` : '';
+        return `<tr>
+          <td class="num">${escapeHtml(fmtDateTime(item?.ts))}</td>
+          <td><span class="model-tag" title="${escapeHtml(provider + effort)}">${escapeHtml(item?.model ?? '未知模型')}</span></td>
+          <td class="num">${escapeHtml(turnStepLabel(item?.turn, item?.step))}</td>
+          <td class="num">${fmtTokens(item?.input_tokens)}</td>
+          <td class="num">${fmtTokens(item?.cache_read)}</td>
+          <td class="num">${fmtTokens(item?.output_tokens)}</td>
+          <td class="num">${fmtCNY(item?.cost_cny)}</td>
+          <td>${peakBadge(item?.peak)}</td>
+          <td class="num">${fmtLatency(item?.latency_ms)}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>
+  </div>`;
+}
+
+function renderRequestPager(ctx, data, count) {
+  const rawTotal = Number(data?.total);
+  const total = Number.isFinite(rawTotal) && data?.total !== null && data?.total !== undefined ? rawTotal : null;
+  const start = count > 0 ? ctx.offset + 1 : 0;
+  const end = ctx.offset + count;
+  let countText;
+  if (count === 0) {
+    countText = '没有匹配的请求';
+  } else if (total !== null) {
+    countText = `第 ${fmtNum(start)}–${fmtNum(end)} 条，共 ${fmtNum(total)} 条`;
+  } else if (count === PAGE_SIZE) {
+    countText = `第 ${fmtNum(start)}–${fmtNum(end)} 条，共 ${fmtNum(end)}+ 条`;
+  } else {
+    countText = `第 ${fmtNum(start)}–${fmtNum(end)} 条，共 ${fmtNum(end)} 条`;
+  }
+  const hasPrev = ctx.offset > 0;
+  const hasNext = count > 0 && (total !== null ? ctx.offset + count < total : count === PAGE_SIZE);
+  ctx.pagerEl.innerHTML = `<span class="page-count">${countText}</span>
+    <div class="pager-actions">
+      <button type="button" class="btn btn-sm" id="req-prev"${hasPrev ? '' : ' disabled'}>上一页</button>
+      <button type="button" class="btn btn-sm" id="req-next"${hasNext ? '' : ' disabled'}>下一页</button>
+    </div>`;
+
+  const prev = ctx.pagerEl.querySelector('#req-prev');
+  if (prev) {
+    prev.addEventListener('click', () => {
+      ctx.offset = Math.max(0, ctx.offset - PAGE_SIZE);
+      state.offset = ctx.offset;
+      loadRequestPage(ctx);
+    });
+  }
+  const next = ctx.pagerEl.querySelector('#req-next');
+  if (next) {
+    next.addEventListener('click', () => {
+      ctx.offset += PAGE_SIZE;
+      state.offset = ctx.offset;
+      loadRequestPage(ctx);
+    });
+  }
+}
+
+async function loadRequestPage(ctx) {
+  const { token } = ctx;
+  if (!isAlive(token)) return;
+  ctx.listEl.innerHTML = loadingBlock('加载请求记录…');
+  ctx.pagerEl.innerHTML = '';
+  try {
+    const data = await apiGet('requests', {
+      ...rangeBounds(),
+      limit: PAGE_SIZE,
+      offset: ctx.offset,
+      model: ctx.model,
+      session: ctx.session,
+    });
+    if (!isAlive(token)) return;
+    ensureOk(data);
+    const rows = Array.isArray(data.requests) ? data.requests : [];
+    renderRequestRows(ctx, rows);
+    renderRequestPager(ctx, data, rows.length);
+  } catch (error) {
+    if (!isAlive(token)) return;
+    const message = error instanceof Error ? error.message : String(error);
+    ctx.listEl.innerHTML = errorBlock(message);
+    ctx.pagerEl.innerHTML = '';
+    const retry = ctx.listEl.querySelector('[data-page-retry]');
+    if (retry) retry.addEventListener('click', () => loadRequestPage(ctx));
+  }
+}
+
+async function renderRequests(root, token) {
+  const ctx = {
+    root,
+    token,
+    model: state.model,
+    session: state.session,
+    offset: state.offset,
+    listEl: null,
+    pagerEl: null,
+  };
+  root.innerHTML = `
+    <section class="card">
+      <div class="filter-row" id="req-filters">${loadingInline('加载筛选项…')}</div>
+    </section>
+    <section class="card">
+      <div class="card-head"><div><h2>请求明细</h2><p class="card-sub">按时间倒序 · 时间范围使用顶部所选区间</p></div></div>
+      <div id="req-list">${loadingBlock('加载请求记录…')}</div>
+      <div class="pager" id="req-pager"></div>
+    </section>`;
+
+  ctx.listEl = root.querySelector('#req-list');
+  ctx.pagerEl = root.querySelector('#req-pager');
+  const meta = await fetchMetaSafe();
+  if (!isAlive(token)) return;
+  paintRequestFilters(ctx, meta);
+  await loadRequestPage(ctx);
+}
+
+/* ==================================================================== cost */
+
+async function loadBalanceHistory(slot, token, onData = () => {}) {
+  if (!slot) return;
+  slot.innerHTML = loadingInline('加载余额历史…');
+  try {
+    const data = await apiGet('balance/history', rangeBounds());
+    if (!isAlive(token)) return;
+    if (!data || data.ok === false) {
+      slot.innerHTML = emptyBlock('余额历史不可用');
+      onData([], data?.reason ?? data?.error ?? 'unavailable');
+      return;
+    }
+    const snapshots = (Array.isArray(data.snapshots) ? data.snapshots : [])
+      .filter((item) => Number.isFinite(Number(item?.ts)) && Number.isFinite(Number(item?.total_cny)))
+      .sort((a, b) => Number(a.ts) - Number(b.ts));
+    if (snapshots.length === 0) {
+      slot.innerHTML = emptyBlock('暂无余额历史快照');
+      onData([], null);
+      return;
+    }
+    const points = snapshots.map((item) => ({
+      label: fmtDate(item.ts),
+      value: Number(item.total_cny),
+      title: `${fmtDateTime(item.ts)} · 余额 ${fmtCNY(item.total_cny)}`,
+    }));
+    slot.innerHTML = `<div class="chart">${lineChartSvg(points, { color: '#4ade80', ariaLabel: '余额历史折线图' })}</div>`;
+    onData(snapshots, null);
+  } catch (error) {
+    if (!isAlive(token)) return;
+    const message = error instanceof Error ? error.message : String(error);
+    slot.innerHTML = `<div class="error-inline" role="alert"><span>余额历史加载失败：${escapeHtml(message)}</span><button type="button" class="btn btn-sm" data-history-retry>重试</button></div>`;
+    const retry = slot.querySelector('[data-history-retry]');
+    if (retry) retry.addEventListener('click', () => loadBalanceHistory(slot, token, onData));
+    onData(null, message);
+  }
+}
+
+function priceSnapshotHtml(byModel, prices) {
+  const priceMap = new Map((prices ?? []).filter(Boolean).map((item) => [item.model, item]));
+  const topNames = [...(byModel ?? [])]
+    .sort((a, b) => (Number(b?.cost) || 0) - (Number(a?.cost) || 0))
+    .slice(0, 5)
+    .map((item) => item?.model);
+  const names = [...new Set((topNames.length > 0 ? topNames : (prices ?? []).slice(0, 5).map((item) => item?.model)).filter(Boolean))];
+  if (names.length === 0) return emptyBlock('暂无价格数据');
+
+  return `<div class="table-wrap">
+    <table class="data" aria-label="价格表快照">
+      <thead><tr>
+        <th scope="col">模型</th>
+        <th scope="col" class="num">缓存命中 · 峰 / 谷</th>
+        <th scope="col" class="num">缓存未命中 · 峰 / 谷</th>
+        <th scope="col" class="num">输出 · 峰 / 谷</th>
+        <th scope="col" class="num">更新日期</th>
+      </tr></thead>
+      <tbody>${names.map((name) => {
+        const price = priceMap.get(name);
+        return `<tr>
+          <td><span class="model-tag">${escapeHtml(name)}</span></td>
+          ${price
+            ? `<td class="num">${fmtPrice(price.hit_peak)} / ${fmtPrice(price.hit_off)}</td>
+               <td class="num">${fmtPrice(price.miss_peak)} / ${fmtPrice(price.miss_off)}</td>
+               <td class="num">${fmtPrice(price.out_peak)} / ${fmtPrice(price.out_off)}</td>
+               <td class="num">${fmtDate(price.updated_at)}</td>`
+            : `<td class="num">未配置</td><td class="num">未配置</td><td class="num">未配置</td><td class="num">—</td>`}
+        </tr>`;
+      }).join('')}</tbody>
+    </table>
+  </div>`;
+}
+
+async function renderCost(root, token) {
+  root.innerHTML = loadingBlock('加载成本数据…');
+  let summary;
+  let prices = [];
+  try {
+    summary = await apiGet('summary', rangeBounds());
+    ensureOk(summary);
+    prices = await apiGet('prices')
+      .then((data) => (data?.ok ? data.prices ?? [] : []))
+      .catch(() => []);
+  } catch (error) {
+    if (!isAlive(token)) return;
+    root.innerHTML = errorBlock(error instanceof Error ? error.message : String(error));
+    bindPageRetry(root);
+    return;
+  }
+  if (!isAlive(token)) return;
+
+  const totals = summary.totals ?? {};
+  const daily = Array.isArray(summary.daily) ? summary.daily : [];
+  const byModel = Array.isArray(summary.byModel) ? summary.byModel : [];
+  const requests = Number(totals.requests) || 0;
+  const days = state.range === 'all' ? Math.max(1, daily.length) : Math.max(1, rangeDays());
+  const averageDailyCost = (Number(totals.cost) || 0) / days;
+
+  root.innerHTML = `
+    ${requests > 0 ? '' : `<div class="card empty-banner" role="status">该时间范围内暂无成本数据。</div>`}
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head"><div><h2>区间估算成本</h2><p class="card-sub">${escapeHtml(rangeLabel())}</p></div></div>
+        <div class="balance-main"><div class="balance-amount">${fmtCNY(totals.cost)}</div><div class="balance-caption">CNY</div></div>
+        <dl class="stat-list">
+          <div><dt>请求数</dt><dd class="num">${fmtNum(totals.requests)}</dd></div>
+          <div><dt>日均成本</dt><dd class="num">${fmtCNY(averageDailyCost)}</dd></div>
+          <div><dt>每请求均价</dt><dd class="num">${fmtCNY(totals.avgCost)}</dd></div>
+          <div><dt>平均延迟</dt><dd class="num">${fmtLatency(totals.latency)}</dd></div>
+        </dl>
+      </section>
+      <section class="card">
+        <div class="card-head">
+          <div><h2>账户余额</h2><p class="card-sub">来自 DeepSeek 账户服务</p></div>
+          <div class="head-actions"><button type="button" class="btn btn-sm" id="cost-balance-refresh">刷新</button></div>
+        </div>
+        <div id="cost-balance-slot" aria-live="polite">${loadingInline('加载余额…')}</div>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="card-head"><div><h2>每日成本</h2><p class="card-sub">按北京时间聚合</p></div></div>
+      ${daily.length > 0 ? `<div class="chart">${dailyChartSvg(daily, 'cost')}</div>` : emptyBlock('该范围内没有每日成本数据')}
+    </section>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head"><div><h2>余额历史</h2><p class="card-sub">本机记录的历史余额快照</p></div></div>
+        <div id="cost-history-slot" aria-live="polite">${loadingInline('加载余额历史…')}</div>
+      </section>
+      <section class="card">
+        <div class="card-head"><div><h2>成本与余额对比</h2><p class="card-sub">估算对比，仅供参考</p></div></div>
+        <div id="cost-compare">${loadingInline('加载余额信息…')}</div>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="card-head">
+        <div><h2>价格表快照</h2><p class="card-sub">主要模型峰/谷价格（CNY / 百万 token）</p></div>
+        <div class="head-actions"><a class="btn btn-sm" href="#/settings">前往设置编辑</a></div>
+      </div>
+      ${priceSnapshotHtml(byModel, prices)}
+    </section>`;
+
+  const compareState = { balance: undefined, history: undefined };
+  const compareElement = root.querySelector('#cost-compare');
+  const balanceSlot = root.querySelector('#cost-balance-slot');
+  const historySlot = root.querySelector('#cost-history-slot');
+  const refresh = root.querySelector('#cost-balance-refresh');
+
+  const paintCompare = () => {
+    if (!compareElement) return;
+    let balanceValue;
+    if (compareState.balance === undefined) {
+      balanceValue = '加载中…';
+    } else if (compareState.balance === null) {
+      balanceValue = '余额不可用';
+    } else {
+      const wallets = Array.isArray(compareState.balance.wallets) ? compareState.balance.wallets : [];
+      const cnyWallets = wallets.filter((wallet) => String(wallet?.currency ?? '').toUpperCase() === 'CNY');
+      balanceValue = fmtCNY(walletTotal(cnyWallets.length > 0 ? cnyWallets : wallets));
+    }
+
+    let changeValue;
+    if (compareState.history === undefined) {
+      changeValue = '加载中…';
+    } else if (!Array.isArray(compareState.history) || compareState.history.length < 2) {
+      changeValue = '暂无历史快照';
+    } else {
+      const history = compareState.history;
+      changeValue = fmtSignedCNY((Number(history[history.length - 1]?.total_cny) || 0) - (Number(history[0]?.total_cny) || 0));
+    }
+
+    compareElement.innerHTML = `<dl class="stat-list">
+      <div><dt>当前余额</dt><dd>${balanceValue}</dd></div>
+      <div><dt>区间估算成本</dt><dd>${fmtCNY(totals.cost)}</dd></div>
+      <div><dt>区间余额变化</dt><dd>${changeValue}</dd></div>
+      <div><dt>请求数</dt><dd>${fmtNum(totals.requests)}</dd></div>
+    </dl>
+    <p class="note">估算成本按官方价格表计算，可能与实际账单存在差异；余额变化取自历史快照首尾差值。</p>`;
+  };
+
+  paintCompare();
+
+  const reloadBalance = () => {
+    loadBalance(balanceSlot, token, (data) => {
+      compareState.balance = data ?? null;
+      paintCompare();
+    });
+  };
+
+  if (balanceSlot) reloadBalance();
+  loadBalanceHistory(historySlot, token, (snapshots) => {
+    compareState.history = snapshots ?? null;
+    paintCompare();
+  });
+  if (refresh && balanceSlot) refresh.addEventListener('click', reloadBalance);
+}
+
+/* ================================================================ settings */
+
+const PRICE_FIELDS = [
+  { key: 'hit_peak', label: '缓存命中·峰时' },
+  { key: 'miss_peak', label: '缓存未命中·峰时' },
+  { key: 'out_peak', label: '输出·峰时' },
+  { key: 'hit_off', label: '缓存命中·谷时' },
+  { key: 'miss_off', label: '缓存未命中·谷时' },
+  { key: 'out_off', label: '输出·谷时' },
+];
+
+function priceInputValue(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? fmtPrice(n) : '';
+}
+
+function setMessage(element, text, tone = '') {
+  if (!element) return;
+  element.textContent = text;
+  element.className = `msg${tone ? ` ${tone}` : ''}`;
+}
+
+function setRowMessage(row, text, tone = '') {
+  const message = row.querySelector('[data-price-msg]');
+  if (!message) return;
+  message.textContent = text;
+  message.className = `msg${tone ? ` ${tone}` : ''}`;
+}
+
+function priceEditorTable(prices) {
+  return `<div class="table-wrap">
+    <table class="data" aria-label="价格表编辑">
+      <thead><tr>
+        <th scope="col">模型</th>
+        ${PRICE_FIELDS.map((field) => `<th scope="col" class="num">${escapeHtml(field.label)}</th>`).join('')}
+        <th scope="col">操作</th>
+      </tr></thead>
+      <tbody id="price-rows">${prices.map((price) => {
+        const model = String(price?.model ?? '');
+        return `<tr data-model="${escapeHtml(model)}">
+          <td><span class="model-tag">${escapeHtml(model)}</span></td>
+          ${PRICE_FIELDS.map((field) => `<td class="num"><input class="price-input" type="number" min="0" step="0.001" inputmode="decimal" data-field="${field.key}" value="${escapeHtml(priceInputValue(price?.[field.key]))}" aria-label="${escapeHtml(`${model} ${field.label}价格`)}"></td>`).join('')}
+          <td><div class="actions-row" style="margin-top:0"><button type="button" class="btn btn-sm" data-price-save>保存</button><span class="msg" data-price-msg role="status" aria-live="polite"></span></div></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>
+  </div>`;
+}
+
+function groupHolidays(holidays) {
+  const grouped = new Map();
+  for (const item of holidays ?? []) {
+    if (!item) continue;
+    const name = String(item.name ?? '未命名');
+    const date = String(item.date ?? '');
+    if (date === '') continue;
+    if (!grouped.has(name)) grouped.set(name, []);
+    if (!grouped.get(name).includes(date)) grouped.get(name).push(date);
+  }
+  return [...grouped.entries()].map(([name, dates]) => ({ name, dates: dates.sort() }));
+}
+
+function holidayListHtml(holidays) {
+  const groups = groupHolidays(holidays);
+  if (groups.length === 0) return emptyBlock('尚未配置节假日');
+  return `<div class="holiday-groups">${groups.map((group) => `<div class="holiday-group">
+    <div class="holiday-head"><span class="holiday-name">${escapeHtml(group.name)}</span><span class="holiday-count">${group.dates.length} 天</span></div>
+    <div class="holiday-dates">${group.dates.map((date) => `<span class="date-chip">${escapeHtml(date)}</span>`).join('')}</div>
+  </div>`).join('')}</div>`;
+}
+
+async function renderSettings(root, token) {
+  root.innerHTML = loadingBlock('加载设置…');
+  let status;
+  let pricesData;
+  let holidaysData;
+  try {
+    [status, pricesData, holidaysData] = await Promise.all([
+      apiGet('status'),
+      apiGet('prices'),
+      apiGet('holidays'),
+    ]);
+    ensureOk(status);
+    ensureOk(pricesData);
+    ensureOk(holidaysData);
+  } catch (error) {
+    if (!isAlive(token)) return;
+    root.innerHTML = errorBlock(error instanceof Error ? error.message : String(error));
+    bindPageRetry(root);
+    return;
+  }
+  if (!isAlive(token)) return;
+
+  const prices = Array.isArray(pricesData.prices) ? pricesData.prices : [];
+  const holidays = Array.isArray(holidaysData.holidays) ? holidaysData.holidays : [];
+  const ingesting = Boolean(status.ingesting);
+  const last = status.last ?? null;
+  const lastHtml = last === null
+    ? '<p class="note">尚未运行。</p>'
+    : (last && typeof last === 'object' && last.error !== undefined)
+      ? `<div class="error-inline" role="alert"><span>最近一次扫描失败：${escapeHtml(String(last.error))}</span></div>`
+      : `<dl class="stat-list">
+           <div><dt>最近扫描</dt><dd>${fmtDateTime(last?.at)}</dd></div>
+           <div><dt>扫描文件</dt><dd class="num">${fmtNum(last?.files)}</dd></div>
+           <div><dt>解析文件</dt><dd class="num">${fmtNum(last?.filesParsed)}</dd></div>
+           <div><dt>写入请求</dt><dd class="num">${fmtNum(last?.requests)}</dd></div>
+         </dl>`;
+
+  root.innerHTML = `
+    <section class="card">
+      <div class="card-head">
+        <div><h2>价格表</h2><p class="card-sub">单位：CNY / 百万 token · 修改后需逐行保存</p></div>
+      </div>
+      ${prices.length > 0 ? priceEditorTable(prices) : emptyBlock('价格表为空')}
+      <div class="actions-row">
+        <button type="button" class="btn" id="reprice-button">按当前价格重算历史</button>
+        <span class="msg" id="reprice-message" role="status" aria-live="polite"></span>
+      </div>
+      <p class="note">保存价格只影响之后的新请求；历史成本需要执行“按当前价格重算历史”。重算只更新成本，不改动 token 记录。</p>
+    </section>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head"><div><h2>数据</h2><p class="card-sub">本机 SQLite 统计库</p></div></div>
+        <dl class="stat-list">
+          <div><dt>数据库路径</dt><dd><code class="path">${escapeHtml(status.dbPath ?? '—')}</code></dd></div>
+          <div><dt>已索引请求</dt><dd class="num" id="stat-requests">${fmtNum(status.requests)}</dd></div>
+          <div><dt>会话数</dt><dd class="num" id="stat-sessions">${fmtNum(status.sessions)}</dd></div>
+          <div><dt>价格模型数</dt><dd class="num" id="stat-prices">${fmtNum(status.prices)}</dd></div>
+          <div><dt>节假日</dt><dd class="num" id="stat-holidays">${fmtNum(status.holidays)}</dd></div>
+        </dl>
+        <div class="actions-row">
+          <button type="button" class="btn" id="reindex-button">重建索引</button>
+          <span class="msg" id="reindex-message" role="status" aria-live="polite"></span>
+        </div>
+        <p class="note">重建索引会重新扫描全部本机会话日志，通常只用于排障。</p>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><h2>运行状态</h2><p class="card-sub">后台增量索引</p></div></div>
+        <div class="status-line">
+          <span class="status-dot ${ingesting ? 'busy' : 'idle'}" aria-hidden="true"></span>
+          <span>${ingesting ? '正在索引…' : '空闲'}</span>
+        </div>
+        ${lastHtml}
+        <p class="note">插件每 60 秒增量扫描一次本机会话日志，只重新解析有变化的文件。</p>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="card-head"><div><h2>节假日</h2><p class="card-sub">用于判定峰谷价格（法定节假日按谷时计）</p></div></div>
+      <div id="holiday-list">${holidayListHtml(holidays)}</div>
+      <div class="actions-row">
+        <button type="button" class="btn" id="holiday-sync-button">同步节假日</button>
+        <span class="msg" id="holiday-message" role="status" aria-live="polite"></span>
+      </div>
+      <p class="note">同步时由服务端拉取年度节假日数据（JSON），默认使用插件仓库中的 2026 年数据。</p>
+    </section>`;
+
+  /* -------- price row savings -------- */
+  const priceRows = root.querySelector('#price-rows');
+  if (priceRows) {
+    priceRows.addEventListener('click', async (event) => {
+      const button = event.target.closest('[data-price-save]');
+      if (!button) return;
+      const row = button.closest('tr');
+      if (!row) return;
+      const model = row.dataset.model;
+      const body = { model };
+      for (const field of PRICE_FIELDS) {
+        const input = row.querySelector(`input[data-field="${field.key}"]`);
+        const raw = input ? input.value.trim() : '';
+        const value = Number(raw);
+        if (raw === '' || !Number.isFinite(value) || value < 0) {
+          setRowMessage(row, `${field.label} 需为非负数字`, 'err');
+          return;
+        }
+        body[field.key] = value;
+      }
+      button.disabled = true;
+      setRowMessage(row, '保存中…', '');
+      try {
+        const result = await apiPost('prices', body);
+        if (!result || result.ok === false) throw new Error(result?.error ?? '保存失败');
+        setRowMessage(row, '已保存', 'ok');
+      } catch (error) {
+        setRowMessage(row, `保存失败：${error instanceof Error ? error.message : String(error)}`, 'err');
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
+
+  /* -------- reprice -------- */
+  const repriceButton = root.querySelector('#reprice-button');
+  const repriceMessage = root.querySelector('#reprice-message');
+  if (repriceButton) {
+    repriceButton.addEventListener('click', async () => {
+      if (!window.confirm('将按当前价格表重算全部历史请求的成本，确定继续？')) return;
+      repriceButton.disabled = true;
+      setMessage(repriceMessage, '正在重算…', '');
+      try {
+        const result = await apiPost('reprice');
+        if (!result || result.ok === false) throw new Error(result?.error ?? '重算失败');
+        const updated = Number(result.updated);
+        setMessage(repriceMessage, Number.isFinite(updated) ? `已重算 ${fmtNum(updated)} 条请求` : '重算完成', 'ok');
+      } catch (error) {
+        setMessage(repriceMessage, `重算失败：${error instanceof Error ? error.message : String(error)}`, 'err');
+      } finally {
+        repriceButton.disabled = false;
+      }
+    });
+  }
+
+  /* -------- reindex -------- */
+  const reindexButton = root.querySelector('#reindex-button');
+  const reindexMessage = root.querySelector('#reindex-message');
+  if (reindexButton) {
+    reindexButton.addEventListener('click', async () => {
+      if (!window.confirm('重建索引会重新扫描全部本机会话日志，可能耗时较长。确定继续？')) return;
+      reindexButton.disabled = true;
+      setMessage(reindexMessage, '正在重建索引…', '');
+      try {
+        const response = await apiPost('reindex');
+        if (!response || response.ok === false) throw new Error(response?.error ?? '重建失败');
+        const result = response.result ?? {};
+        setMessage(reindexMessage, `重建完成：扫描 ${fmtNum(result.files)} 个文件，解析 ${fmtNum(result.filesParsed)} 个，写入 ${fmtNum(result.requests)} 条请求`, 'ok');
+        const fresh = await apiGet('status').catch(() => null);
+        if (fresh?.ok) {
+          const setStat = (selector, value) => {
+            const element = root.querySelector(selector);
+            if (element) element.textContent = fmtNum(value);
+          };
+          setStat('#stat-requests', fresh.requests);
+          setStat('#stat-sessions', fresh.sessions);
+          setStat('#stat-prices', fresh.prices);
+          setStat('#stat-holidays', fresh.holidays);
+        }
+      } catch (error) {
+        setMessage(reindexMessage, `重建失败：${error instanceof Error ? error.message : String(error)}`, 'err');
+      } finally {
+        reindexButton.disabled = false;
+      }
+    });
+  }
+
+  /* -------- holiday sync -------- */
+  const syncButton = root.querySelector('#holiday-sync-button');
+  const holidayMessage = root.querySelector('#holiday-message');
+  if (syncButton) {
+    syncButton.addEventListener('click', async () => {
+      const input = window.prompt('请输入节假日 JSON 文件的链接，服务器会从该地址拉取：', DEFAULT_HOLIDAY_URL);
+      if (input === null) return;
+      const url = input.trim();
+      if (url === '') {
+        setMessage(holidayMessage, '链接不能为空', 'err');
+        return;
+      }
+      syncButton.disabled = true;
+      setMessage(holidayMessage, '正在同步…', '');
+      try {
+        const result = await apiPost('holidays/sync', { url });
+        if (!result || result.ok === false) throw new Error(result?.error ?? '同步失败');
+        setMessage(holidayMessage, `已同步 ${fmtNum(result.count)} 个节假日`, 'ok');
+        const fresh = await apiGet('holidays').catch(() => null);
+        if (fresh?.ok) {
+          const list = root.querySelector('#holiday-list');
+          if (list) list.innerHTML = holidayListHtml(fresh.holidays ?? []);
+          const stat = root.querySelector('#stat-holidays');
+          if (stat) stat.textContent = fmtNum((fresh.holidays ?? []).length);
+        }
+      } catch (error) {
+        setMessage(holidayMessage, `同步失败：${error instanceof Error ? error.message : String(error)}`, 'err');
+      } finally {
+        syncButton.disabled = false;
+      }
+    });
+  }
+}
+
+/* ================================================================ bootstrap */
+
+const PAGE_RENDERERS = {
+  overview: renderOverview,
+  models: renderModels,
+  sessions: renderSessions,
+  requests: renderRequests,
+  cost: renderCost,
+  settings: renderSettings,
+};
+
+function paintHeader() {
+  const meta = ROUTE_META[state.route] ?? ROUTE_META.overview;
+  document.title = `${meta.title} · 用量分析`;
+  const header = document.getElementById('page-head');
+  if (!header) return;
+  header.innerHTML = `
+    <div class="head-titles">
+      <h1>${escapeHtml(meta.title)}</h1>
+      <p>${escapeHtml(meta.subtitle)}</p>
+    </div>
+    <div class="head-tools">
+      <div class="range-label">${escapeHtml(rangeLabel())}</div>
+      <div class="seg" role="group" aria-label="时间范围">
+        ${RANGE_PRESETS.map((preset) => `<button type="button" data-range="${preset.key}" aria-pressed="${preset.key === state.range}">${escapeHtml(preset.label)}</button>`).join('')}
+      </div>
+    </div>`;
+  header.querySelectorAll('[data-range]').forEach((button) => {
+    button.addEventListener('click', () => setRange(button.dataset.range));
+  });
+}
+
+function paintNav() {
+  document.querySelectorAll('#nav a[data-route]').forEach((link) => {
+    if (link.dataset.route === state.route) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  });
+}
+
+function render() {
+  const token = ++renderSeq;
+  paintHeader();
+  paintNav();
+  if (window.scrollY !== 0) window.scrollTo({ top: 0 });
+  const page = document.getElementById('page');
+  if (!page) return;
+  const renderer = PAGE_RENDERERS[state.route];
+  if (!renderer) {
+    page.innerHTML = errorBlock('未知页面');
+    bindPageRetry(page);
+    return;
+  }
+  renderer(page, token);
+  if (!isAlive(token)) return;
+}
+
+function init() {
+  const rawPath = (location.hash || '').replace(/^#\/?/, '').split('?')[0];
+  if (!location.hash || !ROUTES.includes(rawPath)) {
+    history.replaceState(null, '', '#/overview');
+  }
+  syncStateFromHash();
+  window.addEventListener('hashchange', () => {
+    syncStateFromHash();
+    state.offset = 0;
+    render();
+  });
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
