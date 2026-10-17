@@ -30,7 +30,30 @@
   --sidebar-w:220px;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
   --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --hover:rgba(255,255,255,.05);
+  --hover-weak:rgba(255,255,255,.03);
+  --track:#1e222c;
   color-scheme:dark;
+}
+:root[data-theme="light"]{
+  --bg:#f6f7f9;
+  --bg-soft:#ffffff;
+  --card:#ffffff;
+  --card-2:#f1f3f7;
+  --border:#e2e5ec;
+  --border-strong:#c9cfda;
+  --text:#1b1e26;
+  --muted:#5a6172;
+  --faint:#8a90a0;
+  --accent:#2f62e0;
+  --accent-2:#4f7cf0;
+  --success:#15803d;
+  --warn:#b45309;
+  --danger:#c0392b;
+  --hover:rgba(0,0,0,.05);
+  --hover-weak:rgba(0,0,0,.025);
+  --track:#e8ebf1;
+  color-scheme:light;
 }
 
 /* ---------------------------------------------------------------- reset */
@@ -54,7 +77,7 @@ code{font-family:var(--mono);font-size:.92em}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
 svg{display:block}
 ::-webkit-scrollbar{width:10px;height:10px}
-::-webkit-scrollbar-thumb{background:#2a2e39;border-radius:8px;border:2px solid var(--card)}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:8px;border:2px solid var(--card)}
 ::-webkit-scrollbar-track{background:transparent}
 
 /* --------------------------------------------------------------- layout */
@@ -104,7 +127,7 @@ svg{display:block}
   font-size:13.5px;
   transition:background .12s ease,color .12s ease;
 }
-.nav a:hover{background:#1a1d25;color:var(--text)}
+.nav a:hover{background:var(--hover);color:var(--text)}
 .nav a[aria-current="page"]{background:rgba(86,134,254,.14);color:#c9d8ff;font-weight:600}
 .nav .ico{flex:none;opacity:.9}
 
@@ -137,7 +160,7 @@ svg{display:block}
   white-space:nowrap;
   transition:background .12s ease,color .12s ease;
 }
-.seg button:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.seg button:hover{color:var(--text);background:var(--hover)}
 .seg button[aria-pressed="true"]{
   background:rgba(86,134,254,.16);
   color:#d7e3ff;
@@ -190,14 +213,14 @@ svg{display:block}
   padding:6px 12px;
   border:1px solid var(--border);
   border-radius:8px;
-  background:#1a1d25;
+  background:var(--hover);
   color:var(--text);
   font-size:12.5px;
   cursor:pointer;
   white-space:nowrap;
   transition:background .12s ease,border-color .12s ease;
 }
-.btn:hover{background:#222634;border-color:var(--border-strong)}
+.btn:hover{background:var(--hover);border-color:var(--border-strong)}
 .btn:active{transform:translateY(1px)}
 .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
 .btn-sm{padding:3px 9px;font-size:12px;border-radius:6px}
@@ -212,7 +235,7 @@ select,input[type="number"],input[type="text"]{
   padding:5px 9px;
   border:1px solid var(--border);
   border-radius:7px;
-  background:#0f1116;
+  background:var(--card-2);
   color:var(--text);
   font:inherit;
   font-size:12.5px;
@@ -257,7 +280,7 @@ select:focus,input:focus{
   font-size:11.5px;
   letter-spacing:.02em;
 }
-.data tbody tr:nth-child(even){background:rgba(255,255,255,.017)}
+.data tbody tr:nth-child(even){background:var(--hover-weak)}
 .data tbody tr:hover{background:rgba(86,134,254,.075)}
 .data tbody tr:last-child td{border-bottom:0}
 .data .num,.data th.num{text-align:right;font-variant-numeric:tabular-nums}
@@ -282,7 +305,7 @@ select:focus,input:focus{
   padding:1px 6px;
   border:1px solid var(--border);
   border-radius:6px;
-  background:rgba(255,255,255,.04);
+  background:var(--hover);
   color:#c9d3e6;
   font-family:var(--mono);
   font-size:12px;
@@ -290,7 +313,7 @@ select:focus,input:focus{
 
 /* cost bars inside tables and rank lists */
 .bar-cell{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:130px}
-.bar-track{flex:1;min-width:60px;height:6px;border-radius:999px;background:#1e222c;overflow:hidden}
+.bar-track{flex:1;min-width:60px;height:6px;border-radius:999px;background:var(--track);overflow:hidden}
 .bar-fill{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#5686fe,#7aa2ff)}
 .bar-value{flex:none;font-variant-numeric:tabular-nums}
 .rank-list{display:flex;flex-direction:column;gap:14px}
@@ -299,7 +322,7 @@ select:focus,input:focus{
 .rank-name{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rank-meta{color:var(--faint);font-size:11px;margin-top:1px}
 .rank-cost{font-size:12.5px;font-variant-numeric:tabular-nums}
-.rank-bar{grid-column:1/-1;height:6px;margin-top:2px;border-radius:999px;background:#1e222c;overflow:hidden}
+.rank-bar{grid-column:1/-1;height:6px;margin-top:2px;border-radius:999px;background:var(--track);overflow:hidden}
 .rank-bar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#5686fe,#7aa2ff)}
 
 /* --------------------------------------------------------------- charts */
@@ -388,7 +411,7 @@ select:focus,input:focus{
   padding:2px 4px 2px 10px;
   border:1px solid var(--border);
   border-radius:999px;
-  background:#1a1d25;
+  background:var(--hover);
   color:var(--muted);
   font-size:12px;
 }
@@ -400,7 +423,7 @@ select:focus,input:focus{
   color:var(--muted);
   cursor:pointer;
 }
-.chip button:hover{background:rgba(255,255,255,.08);color:var(--text)}
+.chip button:hover{background:var(--hover);color:var(--text)}
 
 /* --------------------------------------------------------------- balance */
 .balance-main{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:2px 0 8px}
@@ -525,6 +548,15 @@ select:focus,input:focus{
   .page-head{margin-bottom:14px}
 }
 </style>
+<style>
+/* light-mode contrast for accent surfaces */
+:root[data-theme="light"] .seg button[aria-pressed="true"]{
+  color:#1d3f9e;
+  background:rgba(47,98,224,.12);
+  box-shadow:inset 0 0 0 1px rgba(47,98,224,.28);
+}
+:root[data-theme="light"] .nav a[aria-current="page"]{color:#1d3f9e}
+</style>
 </head>
 <body>
 <div class="app">
@@ -648,6 +680,16 @@ let renderSeq = 0;
 let chartSeq = 0;
 
 /* ================================================================ helpers */
+
+const themeParam = new URLSearchParams(location.search).get('theme');
+const initialTheme = themeParam === 'light' || themeParam === 'dark'
+  ? themeParam
+  : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+document.documentElement.dataset.theme = initialTheme;
+
+function cssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -1037,7 +1079,7 @@ function dailyChartSvg(daily, mode = 'overview') {
   for (let tick = 0; tick <= 4; tick += 1) {
     const value = (yMax * tick) / 4;
     const y = Y(value);
-    parts.push(`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#23262f" stroke-width="1"/>`);
+    parts.push(`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cssVar('--border')}" stroke-width="1"/>`);
     parts.push(`<text x="${padL - 9}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" class="axis-label">${escapeHtml(fmtCnyAxis(value))}</text>`);
   }
 
@@ -1046,7 +1088,7 @@ function dailyChartSvg(daily, mode = 'overview') {
       const row = rows[index];
       if (row.requests <= 0) continue;
       const height = (row.requests / maxRequests) * innerH * 0.62;
-      parts.push(`<rect x="${(X(index) - barWidth / 2).toFixed(1)}" y="${(baseY - height).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${height.toFixed(1)}" rx="2" fill="#3a4254" fill-opacity="0.55"><title>${escapeHtml(row.day)} · 请求 ${escapeHtml(fmtNum(row.requests))}</title></rect>`);
+      parts.push(`<rect x="${(X(index) - barWidth / 2).toFixed(1)}" y="${(baseY - height).toFixed(1)}" width="${barWidth.toFixed(1)}" height="${height.toFixed(1)}" rx="2" fill="${cssVar('--muted')}" fill-opacity="0.35"><title>${escapeHtml(row.day)} · 请求 ${escapeHtml(fmtNum(row.requests))}</title></rect>`);
     }
   } else {
     for (let index = 0; index < n; index += 1) {
@@ -1070,7 +1112,7 @@ function dailyChartSvg(daily, mode = 'overview') {
   if (n <= 62) {
     for (let index = 0; index < n; index += 1) {
       const row = rows[index];
-      parts.push(`<circle cx="${X(index).toFixed(1)}" cy="${Y(row.cost).toFixed(1)}" r="${n === 1 ? 4 : 2.6}" fill="#0a0a0a" stroke="#5686fe" stroke-width="1.8"><title>${escapeHtml(row.day)} · 成本 ${escapeHtml(fmtCNY(row.cost))} · 请求 ${escapeHtml(fmtNum(row.requests))}</title></circle>`);
+      parts.push(`<circle cx="${X(index).toFixed(1)}" cy="${Y(row.cost).toFixed(1)}" r="${n === 1 ? 4 : 2.6}" fill="${cssVar('--bg')}" stroke="#5686fe" stroke-width="1.8"><title>${escapeHtml(row.day)} · 成本 ${escapeHtml(fmtCNY(row.cost))} · 请求 ${escapeHtml(fmtNum(row.requests))}</title></circle>`);
     }
   }
 
@@ -1118,7 +1160,7 @@ function lineChartSvg(points, options = {}) {
   for (let tick = 0; tick <= 4; tick += 1) {
     const value = (yMax * tick) / 4;
     const y = Y(value);
-    parts.push(`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#23262f" stroke-width="1"/>`);
+    parts.push(`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="${cssVar('--border')}" stroke-width="1"/>`);
     parts.push(`<text x="${padL - 9}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" class="axis-label">${escapeHtml(formatAxis(value))}</text>`);
   }
 
@@ -1133,7 +1175,7 @@ function lineChartSvg(points, options = {}) {
 
   if (n <= 70) {
     for (let index = 0; index < n; index += 1) {
-      parts.push(`<circle cx="${X(index).toFixed(1)}" cy="${Y(rows[index].value).toFixed(1)}" r="${n === 1 ? 4 : 2.4}" fill="#0a0a0a" stroke="${color}" stroke-width="1.7"><title>${escapeHtml(rows[index].title || rows[index].label)}</title></circle>`);
+      parts.push(`<circle cx="${X(index).toFixed(1)}" cy="${Y(rows[index].value).toFixed(1)}" r="${n === 1 ? 4 : 2.4}" fill="${cssVar('--bg')}" stroke="${color}" stroke-width="1.7"><title>${escapeHtml(rows[index].title || rows[index].label)}</title></circle>`);
     }
   }
 
@@ -1161,7 +1203,7 @@ function donutSvg(segments, options = {}) {
   let inner = '';
 
   if (total <= 0) {
-    inner = `<circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="#23262f" stroke-width="${stroke}"/>`;
+    inner = `<circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="${cssVar('--border')}" stroke-width="${stroke}"/>`;
   } else {
     let offset = 0;
     for (const item of items) {

@@ -18,6 +18,10 @@ node scripts/ingest.mjs            # default DB under $DSH_HOME/storages/usage-a
 node scripts/ingest.mjs /tmp/u.db  # throwaway database
 ```
 
+## Dashboard
+
+The dashboard follows the app theme (`?theme=light|dark` passed by the pill) and opens in full screen, which also hides the macOS traffic lights while it is open.
+
 ## Status
 
 - P0: ingest + SQLite + cost engine + JSON API
