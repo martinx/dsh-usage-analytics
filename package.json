@@ -1,6 +1,6 @@
 {
   "name": "dsh-usage-analytics",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "description": "Local usage, token and cost analytics for DeepSeek Harness: full request-level history, CNY cost model, dashboard and dock balance pill.",
   "type": "module",
